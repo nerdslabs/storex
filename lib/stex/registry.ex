@@ -4,11 +4,12 @@ defmodule Stex.Registry do
   @registry :stores_registry
 
   def start_link do
-    Registry.start_link(keys: :duplicate, name: @registry)
     GenServer.start_link(__MODULE__, nil, name: :registry)
   end
 
   def init(nil) do
+    :ets.new(@registry, [:bag, :protected, :named_table])
+
     {:ok, %{}}
   end
 
@@ -29,34 +30,32 @@ defmodule Stex.Registry do
   end
 
   def handle_call({:register_name, session, store, pid}, _from, state) do
-    Registry.register(@registry, session, {store, pid})
+    :ets.insert(@registry, {session, store, pid})
     Process.monitor(pid)
     {:reply, :yes, state}
   end
 
   def handle_call({:unregister_name, session, store}, _from, state) do
-    result = Registry.unregister_match(@registry, session, {store, :_})
+    result = :ets.match_delete(@registry, {session, store, :_})
     {:reply, result, state}
   end
 
   def handle_call({:whereis_name, session, store}, _from, state) do
-    Registry.match(@registry, session, {store, :_})
+    :ets.match(@registry, {session, store, :"$1"})
     |> case do
       [] -> {:reply, :undefined, state}
-      [{_, {_, pid}} | _tail] -> {:reply, pid, state}
+      [[pid] | _tail] -> {:reply, pid, state}
     end
   end
 
   def handle_call({:lookup, session}, _from, state) do
-    stores = Registry.lookup(@registry, session)
-    |> Enum.map(&elem(&1, 1))
+    stores = :ets.lookup(@registry, session)
 
     {:reply, stores, state}
   end
 
-  def handle_info({:DOWN, _ref, :process, _pid, reason}, _state) do
-    IO.inspect("reason: #{inspect reason}")
-    # Registry.unregister_match(@registry, "store", {:_, :_, pid})
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, _state) do
+    :ets.match_delete(@registry, {:_, :_, pid})
 
     {:noreply, :ok}
   end

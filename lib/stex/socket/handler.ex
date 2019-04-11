@@ -15,7 +15,7 @@ defmodule Stex.Socket.Handler do
 
   def terminate(_reason, _req, %{session: session}) do
     Stex.Registry.lookup(session)
-    |> Enum.each(fn {store, _} ->
+    |> Enum.each(fn {session, store, _} ->
       Stex.Supervisor.remove_store(session, store)
     end)
 
