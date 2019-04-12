@@ -7,7 +7,8 @@ defmodule Stex do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Stex.Registry, []),
+      worker(Stex.Registries.Sessions, []),
+      worker(Stex.Registries.Stores, []),
       supervisor(Stex.Supervisor, [])
     ]
 

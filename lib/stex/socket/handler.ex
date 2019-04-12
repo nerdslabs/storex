@@ -6,7 +6,11 @@ defmodule Stex.Socket.Handler do
   def init(request, _state) do
     IO.inspect(request)
 
-    {:cowboy_websocket, request, %{session: Nanoid.generate(), pid: request.pid}}
+    session = Nanoid.generate()
+
+    Stex.Registries.Sessions.register_name(session, request.pid)
+
+    {:cowboy_websocket, request, %{session: session, pid: request.pid}}
   end
 
   def websocket_init(_type, req, _opts) do
@@ -14,7 +18,9 @@ defmodule Stex.Socket.Handler do
   end
 
   def terminate(_reason, _req, %{session: session}) do
-    Stex.Registry.lookup(session)
+    Stex.Registries.Sessions.unregister_name(session)
+
+    Stex.Registries.Stores.lookup(session)
     |> Enum.each(fn {session, store, _} ->
       Stex.Supervisor.remove_store(session, store)
     end)

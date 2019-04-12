@@ -14,11 +14,11 @@ defmodule Stex.Supervisor do
   end
 
   def via_tuple(session, store) do
-    {:via, Stex.Registry, {session, store}}
+    {:via, Stex.Registries.Stores, {session, store}}
   end
 
   def has_store(session, store) do
-    Stex.Registry.whereis_name({session, store})
+    Stex.Registries.Stores.whereis_name({session, store})
     |> case do
       :undefined -> false
       _ -> true
@@ -37,7 +37,7 @@ defmodule Stex.Supervisor do
   end
 
   def get_store(session, store) do
-    Stex.Registry.whereis_name({session, store})
+    Stex.Registries.Stores.whereis_name({session, store})
     |> :sys.get_state()
   end
 

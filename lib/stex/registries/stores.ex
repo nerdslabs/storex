@@ -1,10 +1,10 @@
-defmodule Stex.Registry do
+defmodule Stex.Registries.Stores do
   use GenServer
 
   @registry :stores_registry
 
   def start_link do
-    GenServer.start_link(__MODULE__, nil, name: :registry)
+    GenServer.start_link(__MODULE__, nil, name: @registry)
   end
 
   def init(nil) do
@@ -14,19 +14,19 @@ defmodule Stex.Registry do
   end
 
   def register_name({session, store}, pid) do
-    GenServer.call(:registry, {:register_name, session, store, pid})
+    GenServer.call(@registry, {:register_name, session, store, pid})
   end
 
   def unregister_name({session, store}) do
-    GenServer.call(:registry, {:unregister_name, session, store})
+    GenServer.call(@registry, {:unregister_name, session, store})
   end
 
   def whereis_name({session, store}) do
-    GenServer.call(:registry, {:whereis_name, session, store})
+    GenServer.call(@registry, {:whereis_name, session, store})
   end
 
   def lookup(session) do
-    GenServer.call(:registry, {:lookup, session})
+    GenServer.call(@registry, {:lookup, session})
   end
 
   def handle_call({:register_name, session, store, pid}, _from, state) do
