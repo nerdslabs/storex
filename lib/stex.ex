@@ -14,4 +14,12 @@ defmodule Stex do
 
     Supervisor.start_link(children, strategy: :one_for_one, name: __MODULE__)
   end
+
+  def mutate(session, store, mutation, payload \\ []) do
+    Stex.Registries.Sessions.whereis_name(session)
+    |> case do
+      :undefined -> {:error, "Session #{session} not found."}
+      pid -> Kernel.send(pid, {:mutate, store, mutation, payload})
+    end
+  end
 end

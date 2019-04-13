@@ -52,12 +52,17 @@ defmodule Stex.Socket.Handler do
     end
   end
 
-  def websocket_info({:send, []}, state) do
-    # IO.inspect(info)
-    IO.inspect(state)
+  def websocket_info({:mutate, store, mutation, payload}, %{session: session} = state) do
+    store_state = Stex.Supervisor.mutate_store(session, store, mutation, payload)
 
-    # {:reply, {:text, "Hehe"}, state}
-    {:ok, state}
+    message = %{
+      type: "mutation",
+      session: session,
+      store: store,
+      data: store_state
+    } |> Jason.encode!()
+
+    {:reply, {:text, message}, state}
   end
 
   def websocket_info(_info, state) do
