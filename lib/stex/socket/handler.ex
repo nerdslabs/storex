@@ -4,8 +4,6 @@ defmodule Stex.Socket.Handler do
   alias Stex.Socket
 
   def init(request, _state) do
-    IO.inspect(request)
-
     session = Nanoid.generate()
 
     Stex.Registries.Sessions.register_name(session, request.pid)

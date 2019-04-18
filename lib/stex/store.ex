@@ -1,6 +1,6 @@
 defmodule Stex.Store do
-  @callback init(any()) :: any()
-  @callback mutation(term(), any()) :: any()
+  @callback init(binary(), any()) :: any()
+  @callback mutation(binary(), any()) :: any()
 
   defmacro __using__(_opts) do
     quote do
@@ -17,13 +17,12 @@ defmodule Stex.Store do
 
         @store unquote(env.module)
 
-        def init(params) do
-          IO.inspect(params)
-          {:ok, @store.init(params)}
+        def init({params, session}) do
+          {:ok, @store.init(session, params)}
         end
 
         def start_link([], session: session, store: store, params: params) do
-          GenServer.start_link(Server, params, name: Stex.Supervisor.via_tuple(session, store))
+          GenServer.start_link(Server, {params, session}, name: Stex.Supervisor.via_tuple(session, store))
         end
 
         def handle_cast(:session_ended, state) do
