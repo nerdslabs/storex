@@ -4,18 +4,52 @@
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `stex` to your list of dependencies in `mix.exs`:
+**TODO**
+
+## Basic usage
 
 ```elixir
-def deps do
-  [
-    {:stex, "~> 0.1.0"}
-  ]
+defmodule ExampleApp.Store.Sample do
+  use Stex.Store
+
+  def init(session, params) do
+    {:ok, list} = ExampleApp.get_some_data
+
+    list
+  end
+
+  def mutation({"refresh", _params}, _state) do
+    {:ok, list} = ExampleApp.get_some_data
+
+    list
+  end
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/stex](https://hexdocs.pm/stex).
+```javascript
+import Stex from 'stex'
 
+export default new Stex({
+  store: 'ExampleApp.Store.Sample',
+  params: {},
+})
+```
+
+## Set defalt params
+
+For example you can set current user JWT
+
+```javascript
+  Stex.defaults.params.jwt = 'someJWT'
+```
+
+## Mutate store
+
+**Javascipt**
+```javascript
+store.$commit(mutation, ...params)
+```
+**Elixir**
+```elixir
+Stex.mutate(session, store, mutation, params)
+```
