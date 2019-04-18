@@ -1,6 +1,6 @@
 defmodule Stex.Store do
   @callback init(binary(), any()) :: any()
-  @callback mutation(binary(), any()) :: any()
+  @callback mutation(binary(), any(), any()) :: any()
 
   defmacro __using__(_opts) do
     quote do
@@ -29,9 +29,9 @@ defmodule Stex.Store do
           {:stop, :normal, state}
         end
 
-        def handle_call(request, _, state) do
+        def handle_call({type, data}, _, state) do
           try do
-            result = Kernel.apply(@store, :mutation, [request, state])
+            result = Kernel.apply(@store, :mutation, [type, data, state])
             {:reply, result, result}
           rescue
             e -> IO.inspect(e)
