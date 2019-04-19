@@ -4,7 +4,7 @@ defmodule Stex.Socket.Handler do
   alias Stex.Socket
 
   def init(request, _state) do
-    session = Nanoid.generate()
+    session = Application.get_env(:stex, :session_id_library, Nanoid).generate()
 
     Stex.Registries.Sessions.register_name(session, request.pid)
 

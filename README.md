@@ -53,3 +53,11 @@ store.$commit(mutation, ...params)
 ```elixir
 Stex.mutate(session, store, mutation, params)
 ```
+
+## Change session id generation library
+
+Module needs to have **generate/0** method
+
+```
+config :stex, :session_id_library, Ecto.UUID
+```
