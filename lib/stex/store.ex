@@ -32,10 +32,15 @@ defmodule Stex.Store do
         def handle_call({type, data}, _, state) do
           try do
             result = Kernel.apply(@store, :mutation, [type, data, state])
-            {:reply, result, result}
+            {:reply, {:ok, result}, result}
           rescue
-            e -> IO.inspect(e)
+            e ->
+              {:reply, {:error, "No mutation matching #{inspect type} with data #{inspect data} in store #{inspect @store}"}, state}
           end
+        end
+
+        def handle_call(call, _, state) do
+          raise "Not handled call: #{inspect call}"
         end
 
         def child_spec(opts) do

@@ -46,20 +46,20 @@ defmodule Stex.Socket do
     end
   end
 
-  def message_handle(%{type: "mutation"} = message, state) do
-    store_state =
-      Stex.Supervisor.mutate_store(
-        message.session,
-        message.store,
-        message.data.type,
-        message.data.data
-      )
-
-    message = Map.put(message, :data, store_state)
+  def message_handle(%{type: "mutation", session: session, store: store} = message, state) do
+    Stex.Supervisor.mutate_store(message.session, message.store, message.data.type, message.data.data)
+    |> case do
+      {:ok, store_state} ->
+        Map.put(message, :data, store_state)
+      {:error, error} ->
+        %{
+          type: "error",
+          session: session,
+          store: store,
+          error: error
+        }
+    end
     |> Jason.encode!()
-    # |> :erlang.term_to_binary
-
-    # {:reply, {:binary, message}, state}
-    {:reply, {:text, message}, state}
+    |> (&{:reply, {:text, &1}, state}).()
   end
 end
