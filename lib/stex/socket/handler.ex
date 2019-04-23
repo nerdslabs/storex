@@ -57,7 +57,7 @@ defmodule Stex.Socket.Handler do
       store: store,
       data: %{
         data: data,
-        type: mutation
+        name: mutation
       }
     } |> Socket.message_handle(state)
   end

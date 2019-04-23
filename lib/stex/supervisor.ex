@@ -41,9 +41,8 @@ defmodule Stex.Supervisor do
     |> :sys.get_state()
   end
 
-  def mutate_store(session, store, type, data) do
-    # type = String.to_atom(type)
-    GenServer.call(via_tuple(session, store), {type, data})
+  def mutate_store(session, store, name, data) do
+    GenServer.call(via_tuple(session, store), {name, data})
   end
 
   def remove_store(session, store) do

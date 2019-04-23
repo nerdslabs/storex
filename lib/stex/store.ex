@@ -29,13 +29,13 @@ defmodule Stex.Store do
           {:stop, :normal, state}
         end
 
-        def handle_call({type, data}, _, state) do
+        def handle_call({name, data}, _, state) do
           try do
-            result = Kernel.apply(@store, :mutation, [type, data, state])
+            result = Kernel.apply(@store, :mutation, [name, data, state])
             {:reply, {:ok, result}, result}
           rescue
             e ->
-              {:reply, {:error, "No mutation matching #{inspect type} with data #{inspect data} in store #{inspect @store}"}, state}
+              {:reply, {:error, "No mutation matching #{inspect name} with data #{inspect data} in store #{inspect @store}"}, state}
           end
         end
 

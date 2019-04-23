@@ -129,13 +129,13 @@ class Stex {
     }, 300)
   }
 
-  commit(type: string, ...data: any) {
+  commit(name: string, ...data: any) {
     return this.socket.send({
       type: 'mutation',
       store: this.config.store,
       session: this.session,
       data: {
-        type, data
+        name, data
       }
     }).then((message: Message) => {
       this.state = message.data
