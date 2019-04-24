@@ -3,3 +3,5 @@
 use Mix.Config
 
 config :stex, :session_id_library, Nanoid
+
+config :hound, driver: "chrome_driver"

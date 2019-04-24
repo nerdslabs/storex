@@ -1,11 +1,14 @@
 defmodule Stex.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :stex,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.7",
+      elixirc_paths: elixirc_paths(Mix.env),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
 
@@ -20,7 +23,9 @@ defmodule Stex.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
+  defp elixirc_paths(:test), do: ["lib", "test/browser_test", "test/stores"]
+  defp elixirc_paths(_), do: ["lib"]
+
   def application do
     [
       mod: {Stex, []},
@@ -36,7 +41,11 @@ defmodule Stex.MixProject do
       {:jason, "~> 1.0", optional: true},
 
       # Docs
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.3", only: [:dev], runtime: false},
+
+      # Tests
+      {:hound, "~> 1.1", only: [:test]}
     ]
   end
 end
