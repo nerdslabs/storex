@@ -1,6 +1,14 @@
 defmodule Stex.Store do
-  @callback init(binary(), any()) :: any()
-  @callback mutation(binary(), any(), any()) :: any()
+  @doc """
+  Called when store session starts.
+  """
+  @callback init(session_id :: binary(), params :: any()) :: any()
+  @callback mutation(name :: binary(), data :: any(), state :: any()) :: any()
+  @doc """
+  Called when store session ends.
+  """
+  @callback terminate(session_id :: binary(), state :: any()) :: any()
+  @optional_callbacks terminate: 2
 
   defmacro __using__(_opts) do
     quote do
@@ -25,7 +33,11 @@ defmodule Stex.Store do
           GenServer.start_link(Server, {params, session}, name: Stex.Supervisor.via_tuple(session, store))
         end
 
-        def handle_cast(:session_ended, state) do
+        def handle_cast({:session_ended, session}, state) do
+          if :erlang.function_exported(@store, :terminate, 2) do
+            Kernel.apply(@store, :terminate, [session, state])
+          end
+
           {:stop, :normal, state}
         end
 
