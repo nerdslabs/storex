@@ -1,0 +1,12 @@
+{
+  "name": "stex",
+  "version": "0.1.0",
+  "main": "priv/static/stex.js",
+  "types": "priv/static/stex.d.ts",
+  "author": "NERDSLABS <office@nerdslabs.co>",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "",
+    "watch": ""
+  }
+}
