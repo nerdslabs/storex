@@ -1,4 +1,6 @@
 defmodule Stex.Socket.Handler do
+  @moduledoc false
+
   @behaviour :cowboy_websocket
 
   alias Stex.Socket

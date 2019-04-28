@@ -16,10 +16,7 @@ defmodule Stex.MixProject do
       name: "stex",
       source_url: "https://github.com/nerdslabs/stex",
       homepage_url: "http://nerdslabs.co",
-      docs: [
-        main: "readme",
-        extras: ["README.md"]
-      ]
+      docs: docs()
     ]
   end
 
@@ -33,7 +30,41 @@ defmodule Stex.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
+  defp docs do
+    [
+      source_ref: "v#{@version}",
+      main: "overview",
+      extra_section: "GUIDES",
+      groups_for_modules: groups_for_modules(),
+      extras: extras(),
+      groups_for_extras: groups_for_extras()
+    ]
+  end
+
+  defp groups_for_modules do
+    [
+      "Registries": [
+        Stex.Registries.Sessions,
+        Stex.Registries.Stores
+      ]
+    ]
+  end
+
+  defp extras do
+    [
+      "guides/overview.md",
+      "guides/basic-usage.md",
+      "guides/configuration.md",
+      "guides/frontend/examples.md"
+    ]
+  end
+
+  defp groups_for_extras do
+    [
+      "Frontend": ~r/guides\/frontend\/.?/,
+    ]
+  end
+
   defp deps do
     [
       {:cowboy, "~> 2.6"},
