@@ -78,7 +78,12 @@
             var request = this.requests[data.request];
             if (request !== void 0) {
                 var resolve = request[0], reject = request[1];
-                resolve(data);
+                if (data.type === "error") {
+                    reject(data);
+                }
+                else {
+                    resolve(data);
+                }
             }
             else {
                 if (data.type === "mutation") {
@@ -157,15 +162,20 @@
             for (var _i = 1; _i < arguments.length; _i++) {
                 data[_i - 1] = arguments[_i];
             }
-            return this.socket.send({
-                type: 'mutation',
-                store: this.config.store,
-                session: this.session,
-                data: {
-                    name: name, data: data
-                }
-            }).then(function (message) {
-                _this.state = message.data;
+            return new Promise(function (resolve, reject) {
+                _this.socket.send({
+                    type: 'mutation',
+                    store: _this.config.store,
+                    session: _this.session,
+                    data: {
+                        name: name, data: data
+                    }
+                }).then(function (message) {
+                    _this.state = message.data;
+                    resolve(message.data);
+                }, function (error) {
+                    reject(error.error);
+                });
             });
         };
         Stex.defaults = {

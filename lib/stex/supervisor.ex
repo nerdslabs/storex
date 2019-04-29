@@ -48,6 +48,6 @@ defmodule Stex.Supervisor do
   end
 
   def remove_store(session, store) do
-    GenServer.cast(via_tuple(session, store), {:session_ended, session})
+    GenServer.cast(via_tuple(session, store), :session_ended)
   end
 end

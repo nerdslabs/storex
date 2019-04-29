@@ -65,7 +65,7 @@ defmodule ExampleApp.Store.Sample do
     list
   end
 
-  def mutation("refresh", _data, _state) do
+  def mutation("refresh", _data, _session, _params, _state) do
     {:ok, list} = ExampleApp.get_some_data
 
     list

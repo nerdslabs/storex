@@ -12,7 +12,7 @@ declare module "stex" {
         };
         constructor(config: any);
         _connected(): void;
-        commit(name: string, ...data: any): Promise<void>;
+        commit(name: string, ...data: any): Promise<{}>;
     }
     export default Stex;
 }

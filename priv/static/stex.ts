@@ -5,6 +5,13 @@ interface Message {
   data: any
 }
 
+interface Error {
+  type: string
+  store: string
+  session: string
+  error: string
+}
+
 class Socket {
   private socket: WebSocket
   private keeper: any
@@ -64,7 +71,11 @@ class Socket {
     if (request !== void 0) {
       const [resolve, reject] = request
 
-      resolve(data)
+      if(data.type === "error") {
+        reject(data)
+      } else {
+        resolve(data)
+      }
     } else {
       if (data.type === "mutation") {
         const store = this.stores[data.store]
@@ -156,15 +167,20 @@ class Stex {
   }
 
   commit(name: string, ...data: any) {
-    return this.socket.send({
-      type: 'mutation',
-      store: this.config.store,
-      session: this.session,
-      data: {
-        name, data
-      }
-    }).then((message: Message) => {
-      this.state = message.data
+    return new Promise((resolve, reject) => {
+      this.socket.send({
+        type: 'mutation',
+        store: this.config.store,
+        session: this.session,
+        data: {
+          name, data
+        }
+      }).then((message: Message) => {
+        this.state = message.data
+        resolve(message.data)
+      }, (error: Error) => {
+        reject(error.error)
+      })
     })
   }
 }
