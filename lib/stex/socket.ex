@@ -27,7 +27,7 @@ defmodule Stex.Socket do
           Stex.Supervisor.add_store(state.session, message.store, message.data)
         end
 
-        %{state: store_state} = Stex.Supervisor.get_store(state.session, message.store)
+        store_state = Stex.Supervisor.get_store(state.session, message.store)
 
         message =
           Map.put(message, :data, store_state)

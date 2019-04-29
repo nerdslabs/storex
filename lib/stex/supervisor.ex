@@ -41,6 +41,7 @@ defmodule Stex.Supervisor do
   def get_store(session, store) do
     Stex.Registries.Stores.whereis_name({session, store})
     |> :sys.get_state()
+    |> Map.get(:state)
   end
 
   def mutate_store(session, store, name, data) do
