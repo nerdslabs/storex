@@ -7,12 +7,12 @@ defmodule StexTest.Store.Counter do
     }
   end
 
-  def mutation("increase", _params, state) do
+  def mutation("increase", _data, _session_id, _params, state) do
     counter = state.counter + 1
 
-    %{
+    {:ok, %{
       counter: counter
-    }
+    }}
   end
 
 end
