@@ -1,8 +1,10 @@
 # Stex
 
-Frontend store with the state on the backend. You are able to mutate store state from the frontend and also from the backend.
+Frontend store with the state on the backend. You are able to mutate store state from the frontend and also from the backend. Whole communications going throw WebSocket.
 
 **Important:** Stex is under active development. Report issues and send proposals [here](https://github.com/nerdslabs/stex/issues/new).
+
+Currently, the entire state of the store is being sent on each mutation, planned is to send difference of state.
 
 ## Basic usage
 
@@ -13,7 +15,7 @@ Add **stex** to deps in `mix.exs`:
 ```elixir
 defp deps do
   [
-    {:stex, git: "https://github.com/nerdslabs/stex"}, # After release
+    {:stex, git: "https://github.com/nerdslabs/stex"},
   ]
 end
 ```
@@ -122,6 +124,22 @@ Stex.mutate(session_id, store, "set", [10])
 
 You can change library which generate session id for stores. Module needs to have **generate/0** method.
 
-```
+```elixir
 config :stex, :session_id_library, Ecto.UUID
+```
+
+### Default params
+
+You can set default params for all stores in Javascript which will be passed to store.
+
+```javascript
+Stex.defaults.params = {
+  jwt: 'someJWT'
+}
+```
+
+### Custom store address
+
+```javascript
+Stex.defaults.address = 'localhost/stores'
 ```
