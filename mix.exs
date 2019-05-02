@@ -33,35 +33,8 @@ defmodule Stex.MixProject do
   defp docs do
     [
       source_ref: "v#{@version}",
-      main: "overview",
-      extra_section: "GUIDES",
-      groups_for_modules: groups_for_modules(),
-      extras: extras(),
-      groups_for_extras: groups_for_extras()
-    ]
-  end
-
-  defp groups_for_modules do
-    [
-      "Registries": [
-        Stex.Registries.Sessions,
-        Stex.Registries.Stores
-      ]
-    ]
-  end
-
-  defp extras do
-    [
-      "guides/overview.md",
-      "guides/basic-usage.md",
-      "guides/configuration.md",
-      "guides/frontend/examples.md"
-    ]
-  end
-
-  defp groups_for_extras do
-    [
-      "Frontend": ~r/guides\/frontend\/.?/,
+      main: "readme",
+      extras: ["README.md"]
     ]
   end
 
