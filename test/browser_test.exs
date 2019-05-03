@@ -23,7 +23,7 @@ defmodule StexTest.Browser do
   test "basic state", _meta do
     navigate_to("http://localhost:9999/")
 
-    :timer.sleep(1000)
+    :timer.sleep(500)
 
     counter = find_element(:class, "counter")
 
@@ -33,12 +33,12 @@ defmodule StexTest.Browser do
   test "increase state browser", _meta do
     navigate_to("http://localhost:9999/")
 
-    :timer.sleep(1000)
+    :timer.sleep(500)
 
     find_element(:class, "increase")
     |> click()
 
-    :timer.sleep(1000)
+    :timer.sleep(500)
 
     counter = find_element(:class, "counter")
 
@@ -48,13 +48,13 @@ defmodule StexTest.Browser do
   test "increase state elixir", _meta do
     navigate_to("http://localhost:9999/")
 
-    :timer.sleep(1000)
+    :timer.sleep(500)
 
     session = find_element(:class, "session") |> inner_html()
 
     Stex.mutate(session, "StexTest.Store.Counter", "increase")
 
-    :timer.sleep(1000)
+    :timer.sleep(500)
 
     counter = find_element(:class, "counter")
 

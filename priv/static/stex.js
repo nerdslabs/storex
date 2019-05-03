@@ -89,7 +89,7 @@
                 if (data.type === "mutation") {
                     var store = this.stores[data.store];
                     if (store !== void 0) {
-                        store.state = data.data;
+                        store._mutate(data.data);
                     }
                 }
             }
@@ -134,13 +134,16 @@
     var socket = new Socket();
     var Stex = /** @class */ (function () {
         function Stex(config) {
+            this.listeners = [];
             this.session = config.session || null;
             this.config = config;
             this.socket = socket;
             this.state = null;
             if (!this.config.store) {
-                console.error('[stex]', 'Store is required');
-                return;
+                throw new Error('[stex] Store is required');
+            }
+            if (this.config.subscribe) {
+                this.subscribe(this.config.subscribe);
             }
             this.socket.connect().then(this._connected.bind(this));
         }
@@ -153,8 +156,15 @@
                 data: __assign({}, Stex.defaults.params, this.config.params)
             }).then(function (response) {
                 _this.session = response.session;
-                _this.state = response.data;
+                _this._mutate(response.data);
             });
+        };
+        Stex.prototype._mutate = function (state) {
+            this.state = state;
+            for (var i = 0; i < this.listeners.length; i++) {
+                var listener = this.listeners[i];
+                listener();
+            }
         };
         Stex.prototype.commit = function (name) {
             var _this = this;
@@ -171,12 +181,24 @@
                         name: name, data: data
                     }
                 }).then(function (message) {
-                    _this.state = message.data;
+                    _this._mutate(message.data);
                     resolve(message.data);
                 }, function (error) {
                     reject(error.error);
                 });
             });
+        };
+        Stex.prototype.subscribe = function (listener) {
+            if (typeof listener !== "function") {
+                throw new ErrorEvent("Listener has to be a function.");
+            }
+            this.listeners.push(listener);
+            return function unsubscribe() {
+                var index = this.listeners.indexOf(listener);
+                if (index > -1) {
+                    this.listeners.splice(index, 1);
+                }
+            };
         };
         Stex.defaults = {
             params: {},

@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
 <head></head>
 <body>
   <div class="session"></div>
@@ -7,21 +7,17 @@
 
   <script src="/static/stex.js"></script>
   <script>
-    const store = new stex({
-      store: "StexTest.Store.Counter",
-      params: {}
-    })
-    
     const session = document.querySelector('.session')
     const counter = document.querySelector('.counter')
 
-    setTimeout(() => {
-      session.innerHTML = store.session
-    }, 500)
-
-    setInterval(() => {
-      counter.innerHTML = store.state.counter
-    }, 500)
+    const store = new stex({
+      store: "StexTest.Store.Counter",
+      params: {},
+      subscribe: () => {
+        session.innerHTML = store.session
+        counter.innerHTML = store.state.counter
+      }
+    })
 
     document.querySelector('button.increase').addEventListener('click',  () => store.commit('increase'))
   </script>

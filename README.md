@@ -1,10 +1,10 @@
 # Stex
 
-Frontend store with the state on the backend. You are able to mutate store state from the frontend and also from the backend. Whole communications going throw WebSocket.
+Frontend store with the state on the backend. You are able to mutate store state from the frontend and also from the backend. Whole communication going through WebSocket.
 
 **Important:** Stex is under active development. Report issues and send proposals [here](https://github.com/nerdslabs/stex/issues/new).
 
-Currently, the entire state of the store is being sent on each mutation, planned is to send difference of state.
+Currently, the entire state of the store is being sent on each mutation, sending diffs of state is planned.
 
 ## Basic usage
 
@@ -61,7 +61,7 @@ config :exampleapp, ExampleApp.Endpoint,
 
 ### Create store
 
-To create a store you need to create new elixir module with `init/2` which is called when a page is loaded, every time websocket is connected it generates session_id and passes it as the first argument, params are from Javascript store declaration. Next, to it you can declare `mutation/5` where the first argument is mutation name, second is data passed to mutation, next two params are same like in `init/2`, the last one is the current state of the store.
+To create a store you need to create new elixir module with `init/2` which is called when a page is loaded, every time websocket is connected it generates session_id and passes it as the first argument, params are from Javascript store declaration. Next, you can declare `mutation/5` where the first argument is mutation name, second is data passed to mutation, next two params are same like in `init/2`, the last one is the current state of the store.
 
 ```elixir
 defmodule ExampleApp.Store.Counter do
@@ -91,7 +91,7 @@ end
 
 ### Connect to store
 
-Next part is connect from javascript to created store, `params` are passed as second argument in store `init/2` and as third in `mutation/5`.
+You have to connect the newly created store with a frontend side to be able to synchronise the state: `params` are passed as second argument in store `init/2` and as third in `mutation/5`. You can subscribe to changes inside store state by passing option `subscribe` with function as a value.
 
 ```javascript
 import Stex from 'stex'
@@ -99,6 +99,9 @@ import Stex from 'stex'
 const store = new Stex({
   store: 'ExampleApp.Store.Counter',
   params: {},
+  subscribe: () => {
+    const state = store.state
+  }
 })
 ```
 
@@ -118,9 +121,19 @@ Stex.mutate(session_id, store, "increase")
 Stex.mutate(session_id, store, "set", [10])
 ```
 
+### Subscribe to store state changes
+
+You can subscribe to store state changes in javascript with function subscribe:
+
+```javascript
+store.subscribe(() => {
+  const state = store.state
+})
+```
+
 ## Configuration
 
-### Session library
+### Session id generation library
 
 You can change library which generate session id for stores. Module needs to have **generate/0** method.
 

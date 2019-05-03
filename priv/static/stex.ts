@@ -80,7 +80,7 @@ class Socket {
       if (data.type === "mutation") {
         const store = this.stores[data.store]
         if (store !== void 0) {
-          store.state = data.data
+          store._mutate(data.data)
         }
       }
     }
@@ -128,10 +128,18 @@ class Socket {
 
 const socket = new Socket()
 
+interface StoreConfig {
+  session?: string
+  store: string
+  params: {[key: string]: any}
+  subscribe?: () => void
+}
+
 class Stex {
   private session: string
   private config: any
   private socket: Socket
+  private listeners: (() => void)[] = []
 
   public state: any
 
@@ -139,15 +147,18 @@ class Stex {
     params: {},
   }
 
-  constructor(config: any) {
+  constructor(config: StoreConfig) {
     this.session = config.session || null
     this.config = config
     this.socket = socket
     this.state = null
 
     if (!this.config.store) {
-      console.error('[stex]', 'Store is required')
-      return
+      throw new Error('[stex] Store is required')
+    }
+
+    if (this.config.subscribe) {
+      this.subscribe(this.config.subscribe)
     }
 
     this.socket.connect().then(this._connected.bind(this))
@@ -162,8 +173,17 @@ class Stex {
       data: { ...Stex.defaults.params, ...this.config.params }
     }).then((response: Message) => {
       this.session = response.session
-      this.state = response.data
+      this._mutate(response.data)
     })
+  }
+
+  _mutate(state: any) {
+    this.state = state
+
+    for (let i = 0; i < this.listeners.length; i++) {
+      const listener = this.listeners[i]
+      listener()
+    }
   }
 
   commit(name: string, ...data: any) {
@@ -176,12 +196,27 @@ class Stex {
           name, data
         }
       }).then((message: Message) => {
-        this.state = message.data
+        this._mutate(message.data)
         resolve(message.data)
       }, (error: Error) => {
         reject(error.error)
       })
     })
+  }
+
+  subscribe(listener: () => void): () => void {
+    if(typeof listener !== "function") {
+      throw new ErrorEvent("Listener has to be a function.")
+    }
+
+    this.listeners.push(listener)
+
+    return function unsubscribe() {
+      const index = this.listeners.indexOf(listener)
+      if(index > -1) {
+        this.listeners.splice(index, 1)
+      }
+    }
   }
 }
 
