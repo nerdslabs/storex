@@ -1,5 +1,7 @@
 # Stex
 
+[![Travis](https://img.shields.io/travis/nerdslabs/stex.svg)](https://travis-ci.org/nerdslabs/stex)
+
 Frontend store with the state on the backend. You are able to mutate store state from the frontend and also from the backend. Whole communication going through WebSocket.
 
 **Important:** Stex is under active development. Report issues and send proposals [here](https://github.com/nerdslabs/stex/issues/new).
