@@ -38,7 +38,7 @@ defmodule Stex.Supervisor do
     end
   end
 
-  def get_store(session, store) do
+  def get_store_state(session, store) do
     Stex.Registries.Stores.whereis_name({session, store})
     |> :sys.get_state()
     |> Map.get(:state)
