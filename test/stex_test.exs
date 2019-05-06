@@ -14,12 +14,12 @@ defmodule StexTest do
   end
 
   test "get store", %{session: session, store: store} do
-    assert %{counter: 0} = Stex.Supervisor.get_store(session, store)
+    assert %{counter: 0} = Stex.Supervisor.get_store_state(session, store)
   end
 
   test "mutate store", %{session: session, store: store} do
     Stex.Supervisor.mutate_store(session, store, "increase", [])
 
-    assert %{counter: 1} = Stex.Supervisor.get_store(session, store)
+    assert %{counter: 1} = Stex.Supervisor.get_store_state(session, store)
   end
 end
