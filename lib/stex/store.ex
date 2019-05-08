@@ -61,7 +61,7 @@ defmodule Stex.Store do
             end
             # {:reply, {:ok, result}, state}
           rescue
-            e ->
+            e in FunctionClauseError ->
               {:reply, {:error, "No mutation matching #{inspect name} with data #{inspect data} in store #{inspect @store}"}, state}
           end
         end
