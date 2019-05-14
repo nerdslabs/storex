@@ -52,8 +52,9 @@ defmodule Stex.Store do
             Kernel.apply(@store, :mutation, [name, data, state.session, state.params, state.state])
             |> case do
               {:ok, result} ->
+                diff = Stex.Diff.check(state.state, result)
                 state = Map.put(state, :state, result)
-                {:reply, {:ok, result}, state}
+                {:reply, {:ok, diff}, state}
               {:error, error} ->
                 {:reply, {:error, error}, state}
               _ ->

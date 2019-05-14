@@ -12,6 +12,41 @@ interface Error {
   error: string
 }
 
+class Diff {
+
+  private static set(object: any, path: any[], value: any) {
+    let index = path.pop()
+    let parent = path.reduce((o, i) => o[i], object)
+
+    parent[index] = value
+  }
+
+  private static remove(object: any, path: any[]) {
+    let index = path.pop()
+    let parent = path.reduce((o, i) => o[i], object)
+
+    if (Array.isArray(parent)) {
+      parent.splice(index, 1)
+    } else {
+      delete parent[index]
+    }
+  }
+
+  public static patch(source: any, changes: any[]) {
+    for (let change of changes) {
+      if (change.a === "u") {
+        Diff.set(source, change.p, change.t)
+      } else if (change.a === "d") {
+        Diff.remove(source, change.p)
+      } else if (change.a === "i") {
+        Diff.set(source, change.p, change.t)
+      }
+    }
+
+    return source
+  }
+}
+
 class Socket {
   private socket: WebSocket
   private keeper: any
@@ -80,7 +115,7 @@ class Socket {
       if (data.type === "mutation") {
         const store = this.stores[data.store]
         if (store !== void 0) {
-          store._mutate(data.data)
+          store._mutate(data)
         }
       }
     }
@@ -171,14 +206,18 @@ class Stex {
       type: 'join',
       store: this.config.store,
       data: { ...Stex.defaults.params, ...this.config.params }
-    }).then((response: Message) => {
-      this.session = response.session
-      this._mutate(response.data)
+    }).then((message: Message) => {
+      this.session = message.session
+      this._mutate(message)
     })
   }
 
-  _mutate(state: any) {
-    this.state = state
+  _mutate(message: any) {
+    if (message.diff !== void 0) {
+      this.state = Diff.patch(this.state, message.diff)
+    } else {
+      this.state = message.data
+    }
 
     for (let i = 0; i < this.listeners.length; i++) {
       const listener = this.listeners[i]
@@ -196,7 +235,7 @@ class Stex {
           name, data
         }
       }).then((message: Message) => {
-        this._mutate(message.data)
+        this._mutate(message)
         resolve(message.data)
       }, (error: Error) => {
         reject(error.error)

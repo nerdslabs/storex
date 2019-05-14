@@ -30,6 +30,41 @@
         return __assign.apply(this, arguments);
     };
 
+    var Diff = /** @class */ (function () {
+        function Diff() {
+        }
+        Diff.set = function (object, path, value) {
+            var index = path.pop();
+            var parent = path.reduce(function (o, i) { return o[i]; }, object);
+            parent[index] = value;
+        };
+        Diff.remove = function (object, path) {
+            var index = path.pop();
+            var parent = path.reduce(function (o, i) { return o[i]; }, object);
+            if (Array.isArray(parent)) {
+                parent.splice(index, 1);
+            }
+            else {
+                delete parent[index];
+            }
+        };
+        Diff.patch = function (source, changes) {
+            for (var _i = 0, changes_1 = changes; _i < changes_1.length; _i++) {
+                var change = changes_1[_i];
+                if (change.a === "u") {
+                    Diff.set(source, change.p, change.t);
+                }
+                else if (change.a === "d") {
+                    Diff.remove(source, change.p);
+                }
+                else if (change.a === "i") {
+                    Diff.set(source, change.p, change.t);
+                }
+            }
+            return source;
+        };
+        return Diff;
+    }());
     var Socket = /** @class */ (function () {
         function Socket() {
             this.connections = [];
@@ -89,7 +124,7 @@
                 if (data.type === "mutation") {
                     var store = this.stores[data.store];
                     if (store !== void 0) {
-                        store._mutate(data.data);
+                        store._mutate(data);
                     }
                 }
             }
@@ -154,13 +189,18 @@
                 type: 'join',
                 store: this.config.store,
                 data: __assign({}, Stex.defaults.params, this.config.params)
-            }).then(function (response) {
-                _this.session = response.session;
-                _this._mutate(response.data);
+            }).then(function (message) {
+                _this.session = message.session;
+                _this._mutate(message);
             });
         };
-        Stex.prototype._mutate = function (state) {
-            this.state = state;
+        Stex.prototype._mutate = function (message) {
+            if (message.diff !== void 0) {
+                this.state = Diff.patch(this.state, message.diff);
+            }
+            else {
+                this.state = message.data;
+            }
             for (var i = 0; i < this.listeners.length; i++) {
                 var listener = this.listeners[i];
                 listener();
@@ -181,7 +221,7 @@
                         name: name, data: data
                     }
                 }).then(function (message) {
-                    _this._mutate(message.data);
+                    _this._mutate(message);
                     resolve(message.data);
                 }, function (error) {
                     reject(error.error);
