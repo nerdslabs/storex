@@ -35,6 +35,6 @@ defmodule StexTest.Diff do
   end
 
   test "diff struct" do
-    assert [%{a: "i", p: [:age], t: 10}, %{a: "u", p: [:name], t: "B"}] = Stex.Diff.check(%{name: "A"}, %{name: "B", age: 10})
+    assert [%{a: "u", p: [:name], t: "B"}, %{a: "u", p: [:age], t: 10}] = Stex.Diff.check(%Struct{name: "A"}, %Struct{name: "B", age: 10})
   end
 end
