@@ -6,7 +6,7 @@ Frontend store with the state on the backend. You are able to mutate store state
 
 **Important:** Stex is under active development. Report issues and send proposals [here](https://github.com/nerdslabs/stex/issues/new).
 
-Currently, the entire state of the store is being sent on each mutation, sending diffs of state is planned.
+Only diff of the store state is being sent on each mutation.
 
 ## Basic usage
 

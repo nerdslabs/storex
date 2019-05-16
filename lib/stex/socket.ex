@@ -47,15 +47,21 @@ defmodule Stex.Socket do
   def message_handle(%{type: "mutation", session: session, store: store} = message, state) do
     Stex.Supervisor.mutate_store(message.session, message.store, message.data.name, message.data.data)
     |> case do
-      {:ok, store_state} ->
-        Map.put(message, :data, store_state)
+      {:ok, diff} ->
+        %{
+          type: "mutation",
+          session: session,
+          store: store,
+          diff: diff,
+          request: Map.get(message, :request, nil)
+        }
       {:error, error} ->
         %{
           type: "error",
           session: session,
           store: store,
           error: error,
-          request: message.request
+          request: Map.get(message, :request, nil)
         }
     end
     |> Jason.encode!()

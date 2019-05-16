@@ -21,7 +21,7 @@ declare module "stex" {
         };
         constructor(config: StoreConfig);
         _connected(): void;
-        _mutate(state: any): void;
+        _mutate(message: any): void;
         commit(name: string, ...data: any): Promise<{}>;
         subscribe(listener: () => void): () => void;
     }
