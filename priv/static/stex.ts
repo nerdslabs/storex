@@ -174,7 +174,7 @@ class Stex {
   private session: string
   private config: any
   private socket: Socket
-  private listeners: (() => void)[] = []
+  private listeners: ((state: any) => void)[] = []
 
   public state: any
 
@@ -193,7 +193,11 @@ class Stex {
     }
 
     if (this.config.subscribe) {
-      this.subscribe(this.config.subscribe)
+      if (typeof this.config.subscribe !== "function") {
+        throw new ErrorEvent("Listener has to be a function.")
+      }
+
+      this.listeners.push(this.config.subscribe)
     }
 
     this.socket.connect().then(this._connected.bind(this))
@@ -221,7 +225,7 @@ class Stex {
 
     for (let i = 0; i < this.listeners.length; i++) {
       const listener = this.listeners[i]
-      listener()
+      listener(this.state)
     }
   }
 
@@ -243,12 +247,13 @@ class Stex {
     })
   }
 
-  subscribe(listener: () => void): () => void {
+  subscribe(listener: (state: any) => void): () => void {
     if(typeof listener !== "function") {
       throw new ErrorEvent("Listener has to be a function.")
     }
 
     this.listeners.push(listener)
+    listener(this.state)
 
     return function unsubscribe() {
       const index = this.listeners.indexOf(listener)

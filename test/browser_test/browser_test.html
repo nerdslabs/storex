@@ -13,9 +13,9 @@
     const store = new stex({
       store: "StexTest.Store.Counter",
       params: {},
-      subscribe: () => {
+      subscribe: (state) => {
         session.innerHTML = store.session
-        counter.innerHTML = store.state.counter
+        counter.innerHTML = state.counter
       }
     })
 

@@ -23,7 +23,7 @@ declare module "stex" {
         _connected(): void;
         _mutate(message: any): void;
         commit(name: string, ...data: any): Promise<{}>;
-        subscribe(listener: () => void): () => void;
+        subscribe(listener: (state: any) => void): () => void;
     }
     export default Stex;
 }

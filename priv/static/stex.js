@@ -178,7 +178,10 @@
                 throw new Error('[stex] Store is required');
             }
             if (this.config.subscribe) {
-                this.subscribe(this.config.subscribe);
+                if (typeof this.config.subscribe !== "function") {
+                    throw new ErrorEvent("Listener has to be a function.");
+                }
+                this.listeners.push(this.config.subscribe);
             }
             this.socket.connect().then(this._connected.bind(this));
         }
@@ -203,7 +206,7 @@
             }
             for (var i = 0; i < this.listeners.length; i++) {
                 var listener = this.listeners[i];
-                listener();
+                listener(this.state);
             }
         };
         Stex.prototype.commit = function (name) {
@@ -233,6 +236,7 @@
                 throw new ErrorEvent("Listener has to be a function.");
             }
             this.listeners.push(listener);
+            listener(this.state);
             return function unsubscribe() {
                 var index = this.listeners.indexOf(listener);
                 if (index > -1) {
