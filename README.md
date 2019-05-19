@@ -101,8 +101,8 @@ import Stex from 'stex'
 const store = new Stex({
   store: 'ExampleApp.Store.Counter',
   params: {},
-  subscribe: () => {
-    const state = store.state
+  subscribe: (state) => {
+    const state = state
   }
 })
 ```
@@ -128,8 +128,8 @@ Stex.mutate(session_id, store, "set", [10])
 You can subscribe to store state changes in javascript with function subscribe:
 
 ```javascript
-store.subscribe(() => {
-  const state = store.state
+store.subscribe((state) => {
+  const state = state
 })
 ```
 
