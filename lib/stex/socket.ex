@@ -6,11 +6,10 @@ defmodule Stex.Socket do
   """
 
   def message_handle(%{type: "ping"} = message, state) do
-    message = Map.put(message, :type, "pong")
-    |> Jason.encode!()
-    # |> :erlang.term_to_binary
+    message =
+      Map.put(message, :type, "pong")
+      |> Jason.encode!()
 
-    # {:reply, {:binary, message}, state}
     {:reply, {:text, message}, state}
   end
 
@@ -33,9 +32,7 @@ defmodule Stex.Socket do
           Map.put(message, :data, store_state)
           |> Map.put(:session, state.session)
           |> Jason.encode!()
-          # |> :erlang.term_to_binary
 
-        # {:reply, {:binary, message}, state}
         {:reply, {:text, message}, state}
 
       false ->

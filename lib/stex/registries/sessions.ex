@@ -53,12 +53,6 @@ defmodule Stex.Registries.Sessions do
     {:reply, stores, state}
   end
 
-  # def handle_info({:DOWN, _ref, :process, pid, _reason}, _state) do
-  #   :ets.match_delete(@registry, {:_, :_, pid})
-
-  #   {:noreply, :ok}
-  # end
-
   def send(tuple, message) do
     case whereis_name(tuple) do
       :undefined ->
