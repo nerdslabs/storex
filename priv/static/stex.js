@@ -225,7 +225,17 @@
                     }
                 }).then(function (message) {
                     _this._mutate(message);
-                    resolve(message.data);
+                    if (message.message !== void 0) {
+                        resolve({
+                            data: message.data,
+                            message: message.message
+                        });
+                    }
+                    else {
+                        resolve({
+                            data: message.data
+                        });
+                    }
                 }, function (error) {
                     reject(error.error);
                 });

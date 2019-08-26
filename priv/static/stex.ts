@@ -2,7 +2,8 @@ interface Message {
   type: string
   store: string
   session: string
-  data: any
+  data: any,
+  message?: any
 }
 
 interface Error {
@@ -240,7 +241,16 @@ class Stex {
         }
       }).then((message: Message) => {
         this._mutate(message)
-        resolve(message.data)
+        if (message.message !== void 0) {
+          resolve({
+            data: message.data,
+            message: message.message
+          })
+        } else {
+          resolve({
+            data: message.data
+          })
+        }
       }, (error: Error) => {
         reject(error.error)
       })

@@ -37,7 +37,7 @@ You need to add handler `Stex.Socket.Handler` to cowboy dispatch.
 **Phoenix:**
 Example based on [Phoenix guides](https://hexdocs.pm/phoenix/Phoenix.Endpoint.Cowboy2Adapter.html)
 
-```
+```elixir
 config :exampleapp, ExampleApp.Endpoint,
   http: [
     dispatch: [
@@ -51,7 +51,7 @@ config :exampleapp, ExampleApp.Endpoint,
 ```
 
 **Cowboy:**
-```
+```elixir
 :cowboy_router.compile([
     {:_, [
       # ...
@@ -76,17 +76,17 @@ defmodule ExampleApp.Store.Counter do
   def mutation("increase", _data, _session_id, _params, state) do
     state = state + 1
 
-    {:ok, state}
+    {:noreply, state}
   end
 
   def mutation("decrease", _data, _session_id, _params, state) do
     state = state - 1
 
-    {:ok, state}
+    {:reply, "message", state}
   end
 
   def mutation("set", [number], _session_id, _params, state) do
-    {:ok, number}
+    {:noreply, number}
   end
 end
 ```
@@ -113,6 +113,9 @@ You can mutate store from javascript with store instance:
 
 ```javascript
 store.mutate("increase")
+store.mutate("decrease").then((response) => {
+  response.message // Reply from elixir
+})
 store.mutate("set", 10)
 ```
 

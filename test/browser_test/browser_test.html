@@ -3,12 +3,15 @@
 <body>
   <div class="session"></div>
   <div class="counter"></div>
+  <div class="reply"></div>
   <button class="increase"></button>
+  <button class="decrease"></button>
 
   <script src="/static/stex.js"></script>
   <script>
     const session = document.querySelector('.session')
     const counter = document.querySelector('.counter')
+    const reply = document.querySelector('.reply')
 
     const store = new stex({
       store: "StexTest.Store.Counter",
@@ -20,6 +23,15 @@
     })
 
     document.querySelector('button.increase').addEventListener('click',  () => store.commit('increase'))
+
+
+    document.querySelector('button.decrease').addEventListener('click', () => {
+      store.commit('decrease').then(response => {
+        if (response.message !== void 0) {
+          reply.innerHTML = response.message
+        }
+      })
+    })
   </script>
 </body>
 </html>

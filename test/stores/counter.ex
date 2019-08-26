@@ -10,7 +10,15 @@ defmodule StexTest.Store.Counter do
   def mutation("increase", _data, _session_id, _params, state) do
     counter = state.counter + 1
 
-    {:ok, %{
+    {:noreply, %{
+      counter: counter
+    }}
+  end
+
+  def mutation("decrease", _data, _session_id, _params, state) do
+    counter = state.counter - 1
+
+    {:reply, "decreased", %{
       counter: counter
     }}
   end

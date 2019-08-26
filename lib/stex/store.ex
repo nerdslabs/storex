@@ -3,7 +3,7 @@ defmodule Stex.Store do
   Called when store session starts.
   """
   @callback init(session_id :: binary(), params :: any()) :: any()
-  @callback mutation(name :: binary(), data :: any(), session_id :: binary(), params :: any(), state :: any()) :: {:ok, state :: any()} | {:error, state :: any()}
+  @callback mutation(name :: binary(), data :: any(), session_id :: binary(), params :: any(), state :: any()) :: {:replay, message :: any(), state :: any()} | {:noreplay, state :: any()} | {:error, state :: any()}
   @doc """
   Called when store session ends.
   """
@@ -51,14 +51,18 @@ defmodule Stex.Store do
           try do
             Kernel.apply(@store, :mutation, [name, data, state.session, state.params, state.state])
             |> case do
-              {:ok, result} ->
+              {:reply, message, result} ->
+                diff = Stex.Diff.check(state.state, result)
+                state = Map.put(state, :state, result)
+                {:reply, {:ok, message, diff}, state}
+              {:noreply, result} ->
                 diff = Stex.Diff.check(state.state, result)
                 state = Map.put(state, :state, result)
                 {:reply, {:ok, diff}, state}
               {:error, error} ->
                 {:reply, {:error, error}, state}
               _ ->
-                {:reply, {:error, "Return value of mutation should be {:ok, state} or {:error, error}"}, state}
+                {:reply, {:error, "Return value of mutation should be {:reply, message, state}, {:noreply, state} or {:error, error}"}, state}
             end
             # {:reply, {:ok, result}, state}
           rescue

@@ -52,6 +52,15 @@ defmodule Stex.Socket do
           diff: diff,
           request: Map.get(message, :request, nil)
         }
+      {:ok, reply_message, diff} ->
+        %{
+          type: "mutation",
+          session: session,
+          store: store,
+          diff: diff,
+          message: reply_message,
+          request: Map.get(message, :request, nil)
+        }
       {:error, error} ->
         %{
           type: "error",

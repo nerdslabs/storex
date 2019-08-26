@@ -61,4 +61,19 @@ defmodule StexTest.Browser do
     assert inner_html(counter) == "1"
   end
 
+  test "decrease state browser reply", _meta do
+    navigate_to("http://localhost:9999/")
+
+    :timer.sleep(500)
+
+    find_element(:class, "decrease")
+    |> click()
+
+    :timer.sleep(500)
+
+    reply = find_element(:class, "reply")
+
+    assert inner_html(reply) == "decreased"
+  end
+
 end
