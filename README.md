@@ -114,7 +114,7 @@ You can mutate store from javascript with store instance:
 ```javascript
 store.mutate("increase")
 store.mutate("decrease").then((response) => {
-  response.message // Reply from elixir
+  response // Reply from elixir
 })
 store.mutate("set", 10)
 ```

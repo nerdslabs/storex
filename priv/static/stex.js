@@ -226,15 +226,10 @@
                 }).then(function (message) {
                     _this._mutate(message);
                     if (message.message !== void 0) {
-                        resolve({
-                            data: message.data,
-                            message: message.message
-                        });
+                        resolve(message.message);
                     }
                     else {
-                        resolve({
-                            data: message.data
-                        });
+                        resolve();
                     }
                 }, function (error) {
                     reject(error.error);

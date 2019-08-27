@@ -27,8 +27,8 @@
 
     document.querySelector('button.decrease').addEventListener('click', () => {
       store.commit('decrease').then(response => {
-        if (response.message !== void 0) {
-          reply.innerHTML = response.message
+        if (response !== void 0) {
+          reply.innerHTML = response
         }
       })
     })
