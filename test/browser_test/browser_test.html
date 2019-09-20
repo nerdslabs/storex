@@ -7,14 +7,14 @@
   <button class="increase"></button>
   <button class="decrease"></button>
 
-  <script src="/static/stex.js"></script>
+  <script src="/static/storex.js"></script>
   <script>
     const session = document.querySelector('.session')
     const counter = document.querySelector('.counter')
     const reply = document.querySelector('.reply')
 
-    const store = new stex({
-      store: "StexTest.Store.Counter",
+    const store = new storex({
+      store: "StorexTest.Store.Counter",
       params: {},
       subscribe: (state) => {
         session.innerHTML = store.session

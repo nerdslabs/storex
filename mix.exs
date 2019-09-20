@@ -1,11 +1,11 @@
-defmodule Stex.MixProject do
+defmodule Storex.MixProject do
   use Mix.Project
 
   @version "0.1.0"
 
   def project do
     [
-      app: :stex,
+      app: :storex,
       version: @version,
       elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env),
@@ -13,8 +13,8 @@ defmodule Stex.MixProject do
       deps: deps(),
 
       # Docs
-      name: "stex",
-      source_url: "https://github.com/nerdslabs/stex",
+      name: "storex",
+      source_url: "https://github.com/nerdslabs/storex",
       homepage_url: "http://nerdslabs.co",
       docs: docs()
     ]
@@ -25,7 +25,7 @@ defmodule Stex.MixProject do
 
   def application do
     [
-      mod: {Stex, []},
+      mod: {Storex, []},
       extra_applications: [:logger]
     ]
   end

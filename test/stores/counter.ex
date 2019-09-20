@@ -1,5 +1,5 @@
-defmodule StexTest.Store.Counter do
-  use Stex.Store
+defmodule StorexTest.Store.Counter do
+  use Storex.Store
 
   def init(_session, _params) do
     %{

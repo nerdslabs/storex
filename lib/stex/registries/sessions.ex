@@ -1,7 +1,7 @@
-defmodule Stex.Registries.Sessions do
+defmodule Storex.Registries.Sessions do
   use GenServer
 
-  @registry :stex_sessions_registry
+  @registry :storex_sessions_registry
 
   def start_link do
     GenServer.start_link(__MODULE__, nil, name: @registry)

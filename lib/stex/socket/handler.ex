@@ -1,14 +1,14 @@
-defmodule Stex.Socket.Handler do
+defmodule Storex.Socket.Handler do
   @moduledoc false
 
   @behaviour :cowboy_websocket
 
-  alias Stex.Socket
+  alias Storex.Socket
 
   def init(request, _state) do
-    session = Application.get_env(:stex, :session_id_library, Nanoid).generate()
+    session = Application.get_env(:storex, :session_id_library, Nanoid).generate()
 
-    Stex.Registries.Sessions.register_name(session, request.pid)
+    Storex.Registries.Sessions.register_name(session, request.pid)
 
     {:cowboy_websocket, request, %{session: session, pid: request.pid}}
   end
@@ -18,11 +18,11 @@ defmodule Stex.Socket.Handler do
   end
 
   def terminate(_reason, _req, %{session: session}) do
-    Stex.Registries.Sessions.unregister_name(session)
+    Storex.Registries.Sessions.unregister_name(session)
 
-    Stex.Registries.Stores.lookup(session)
+    Storex.Registries.Stores.lookup(session)
     |> Enum.each(fn {session, store, _} ->
-      Stex.Supervisor.remove_store(session, store)
+      Storex.Supervisor.remove_store(session, store)
     end)
 
     :ok

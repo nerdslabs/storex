@@ -1,10 +1,10 @@
-# Stex
+# Storex
 
-[![Travis](https://img.shields.io/travis/nerdslabs/stex.svg)](https://travis-ci.org/nerdslabs/stex)
+[![Travis](https://img.shields.io/travis/nerdslabs/storex.svg)](https://travis-ci.org/nerdslabs/storex)
 
 Frontend store with the state on the backend. You are able to mutate store state from the frontend and also from the backend. Whole communication going through WebSocket.
 
-**Important:** Stex is under active development. Report issues and send proposals [here](https://github.com/nerdslabs/stex/issues/new).
+**Important:** Storex is under active development. Report issues and send proposals [here](https://github.com/nerdslabs/storex/issues/new).
 
 Only diff of the store state is being sent on each mutation.
 
@@ -12,27 +12,27 @@ Only diff of the store state is being sent on each mutation.
 
 ### Installation
 
-Add **stex** to deps in `mix.exs`:
+Add **storex** to deps in `mix.exs`:
 
 ```elixir
 defp deps do
   [
-    {:stex, git: "https://github.com/nerdslabs/stex"},
+    {:storex, git: "https://github.com/nerdslabs/storex"},
   ]
 end
 ```
 
-Also you need to add **stex** to `package.json` dependencies:
+Also you need to add **storex** to `package.json` dependencies:
 
 ```javascript
 {
-  "stex": "file:../deps/stex",
+  "storex": "file:../deps/storex",
 }
 ```
 
-### Add stex websocket handler
+### Add storex websocket handler
 
-You need to add handler `Stex.Socket.Handler` to cowboy dispatch.
+You need to add handler `Storex.Socket.Handler` to cowboy dispatch.
 
 **Phoenix:**
 Example based on [Phoenix guides](https://hexdocs.pm/phoenix/Phoenix.Endpoint.Cowboy2Adapter.html)
@@ -43,7 +43,7 @@ config :exampleapp, ExampleApp.Endpoint,
     dispatch: [
       {:_,
        [
-         {"/stex", Stex.Socket.Handler, []},
+         {"/storex", Storex.Socket.Handler, []},
          {:_, Phoenix.Endpoint.Cowboy2Handler, {ExampleApp.Endpoint, []}}
        ]}
     ]
@@ -55,7 +55,7 @@ config :exampleapp, ExampleApp.Endpoint,
 :cowboy_router.compile([
     {:_, [
       # ...
-      {"/stex", Stex.Socket.Handler, []},
+      {"/storex", Storex.Socket.Handler, []},
       # ...
     ]}
   ])
@@ -67,7 +67,7 @@ To create a store you need to create new elixir module with `init/2` which is ca
 
 ```elixir
 defmodule ExampleApp.Store.Counter do
-  use Stex.Store
+  use Storex.Store
 
   def init(session_id, params) do
     0
@@ -96,9 +96,9 @@ end
 You have to connect the newly created store with a frontend side to be able to synchronise the state: `params` are passed as second argument in store `init/2` and as third in `mutation/5`. You can subscribe to changes inside store state by passing option `subscribe` with function as a value.
 
 ```javascript
-import Stex from 'stex'
+import Storex from 'storex'
 
-const store = new Stex({
+const store = new Storex({
   store: 'ExampleApp.Store.Counter',
   params: {},
   subscribe: (state) => {
@@ -122,8 +122,8 @@ store.mutate("set", 10)
 Or directly from elixir:
 
 ```elixir
-Stex.mutate(session_id, store, "increase")
-Stex.mutate(session_id, store, "set", [10])
+Storex.mutate(session_id, store, "increase")
+Storex.mutate(session_id, store, "set", [10])
 ```
 
 ### Subscribe to store state changes
@@ -143,7 +143,7 @@ store.subscribe((state) => {
 You can change library which generate session id for stores. Module needs to have **generate/0** method.
 
 ```elixir
-config :stex, :session_id_library, Ecto.UUID
+config :storex, :session_id_library, Ecto.UUID
 ```
 
 ### Default params
@@ -151,7 +151,7 @@ config :stex, :session_id_library, Ecto.UUID
 You can set default params for all stores in Javascript which will be passed to store.
 
 ```javascript
-Stex.defaults.params = {
+Storex.defaults.params = {
   jwt: 'someJWT'
 }
 ```
@@ -159,5 +159,5 @@ Stex.defaults.params = {
 ### Custom store address
 
 ```javascript
-Stex.defaults.address = 'localhost/stores'
+Storex.defaults.address = 'localhost/stores'
 ```

@@ -55,7 +55,7 @@ class Socket {
 
   private connections: any[] = []
 
-  public stores: { [key: string]: Stex }
+  public stores: { [key: string]: Storex }
 
   constructor() {
     this.keeper = null
@@ -72,7 +72,7 @@ class Socket {
         this.connections.push({ resolve, reject })
 
         if (this.socket === void 0) {
-          const address = Stex.defaults.address || location.host + '/stex'
+          const address = Storex.defaults.address || location.host + '/storex'
 
           this.socket = new WebSocket('ws://' + address)
           this.socket.binaryType = 'arraybuffer'
@@ -151,7 +151,7 @@ class Socket {
     const reason = event.reason
 
     if (code >= 4000) {
-      console.error('[stex]', reason)
+      console.error('[storex]', reason)
     } else if (code === 1000) {
       this.connect()
     }
@@ -171,7 +171,7 @@ interface StoreConfig {
   subscribe?: () => void
 }
 
-class Stex {
+class Storex {
   private session: string
   private config: any
   private socket: Socket
@@ -190,7 +190,7 @@ class Stex {
     this.state = null
 
     if (!this.config.store) {
-      throw new Error('[stex] Store is required')
+      throw new Error('[storex] Store is required')
     }
 
     if (this.config.subscribe) {
@@ -210,7 +210,7 @@ class Stex {
     this.socket.send({
       type: 'join',
       store: this.config.store,
-      data: { ...Stex.defaults.params, ...this.config.params }
+      data: { ...Storex.defaults.params, ...this.config.params }
     }).then((message: Message) => {
       this.session = message.session
       this._mutate(message)
@@ -269,4 +269,4 @@ class Stex {
   }
 }
 
-export default Stex
+export default Storex

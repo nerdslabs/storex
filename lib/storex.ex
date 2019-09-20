@@ -1,4 +1,4 @@
-defmodule Stex do
+defmodule Storex do
 
   use Application
 
@@ -7,9 +7,9 @@ defmodule Stex do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Stex.Registries.Sessions, []),
-      worker(Stex.Registries.Stores, []),
-      supervisor(Stex.Supervisor, [])
+      worker(Storex.Registries.Sessions, []),
+      worker(Storex.Registries.Stores, []),
+      supervisor(Storex.Supervisor, [])
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: __MODULE__)
@@ -19,11 +19,11 @@ defmodule Stex do
   Mutate store from elixir.
 
   ```elixir
-  Stex.mutate("d9ez7fgkp96", "ExampleApp.Store", "reload", ["user_id"])
+  Storex.mutate("d9ez7fgkp96", "ExampleApp.Store", "reload", ["user_id"])
   ```
   """
   def mutate(session, store, mutation, payload \\ []) do
-    Stex.Registries.Sessions.whereis_name(session)
+    Storex.Registries.Sessions.whereis_name(session)
     |> case do
       :undefined -> {:error, "Session #{session} not found."}
       pid -> Kernel.send(pid, {:mutate, store, mutation, payload})

@@ -1,4 +1,4 @@
-defmodule StexTest.Browser do
+defmodule StorexTest.Browser do
   use ExUnit.Case
   use Hound.Helpers
 
@@ -6,8 +6,8 @@ defmodule StexTest.Browser do
     dispatch = :cowboy_router.compile([
       {:_, [
         {"/static/[...]", :cowboy_static, {:dir, "priv/static"}},
-        {"/stex", Stex.Socket.Handler, []},
-        {:_, StexTest.Browser.Handler, []},
+        {"/storex", Storex.Socket.Handler, []},
+        {:_, StorexTest.Browser.Handler, []},
       ]}
     ])
 
@@ -52,7 +52,7 @@ defmodule StexTest.Browser do
 
     session = find_element(:class, "session") |> inner_html()
 
-    Stex.mutate(session, "StexTest.Store.Counter", "increase")
+    Storex.mutate(session, "StorexTest.Store.Counter", "increase")
 
     :timer.sleep(500)
 

@@ -1,4 +1,4 @@
-defmodule StexTest.Browser.Handler do
+defmodule StorexTest.Browser.Handler do
 
   def init(request, state) do
     {:ok, file} = File.read("./test/browser_test/browser_test.html")

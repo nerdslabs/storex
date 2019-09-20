@@ -1,4 +1,4 @@
-defmodule Stex.Store do
+defmodule Storex.Store do
   @doc """
   Called when store session starts.
   """
@@ -12,9 +12,9 @@ defmodule Stex.Store do
 
   defmacro __using__(_opts) do
     quote do
-      @behaviour Stex.Store
+      @behaviour Storex.Store
 
-      @before_compile Stex.Store
+      @before_compile Storex.Store
     end
   end
 
@@ -36,7 +36,7 @@ defmodule Stex.Store do
         end
 
         def start_link([], session: session, store: store, params: params) do
-          GenServer.start_link(Server, {params, session}, name: Stex.Supervisor.via_tuple(session, store))
+          GenServer.start_link(Server, {params, session}, name: Storex.Supervisor.via_tuple(session, store))
         end
 
         def handle_cast(:session_ended, state) do
@@ -52,11 +52,11 @@ defmodule Stex.Store do
             Kernel.apply(@store, :mutation, [name, data, state.session, state.params, state.state])
             |> case do
               {:reply, message, result} ->
-                diff = Stex.Diff.check(state.state, result)
+                diff = Storex.Diff.check(state.state, result)
                 state = Map.put(state, :state, result)
                 {:reply, {:ok, message, diff}, state}
               {:noreply, result} ->
-                diff = Stex.Diff.check(state.state, result)
+                diff = Storex.Diff.check(state.state, result)
                 state = Map.put(state, :state, result)
                 {:reply, {:ok, diff}, state}
               {:error, error} ->

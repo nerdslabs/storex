@@ -1,4 +1,4 @@
-defmodule Stex.Socket do
+defmodule Storex.Socket do
   @moduledoc """
     Response codes:
     - 4000: Store is not set.
@@ -22,11 +22,11 @@ defmodule Stex.Socket do
     |> Code.ensure_compiled?()
     |> case do
       true ->
-        if Stex.Supervisor.has_store(state.session, message.store) == false do
-          Stex.Supervisor.add_store(state.session, message.store, message.data)
+        if Storex.Supervisor.has_store(state.session, message.store) == false do
+          Storex.Supervisor.add_store(state.session, message.store, message.data)
         end
 
-        store_state = Stex.Supervisor.get_store_state(state.session, message.store)
+        store_state = Storex.Supervisor.get_store_state(state.session, message.store)
 
         message =
           Map.put(message, :data, store_state)
@@ -42,7 +42,7 @@ defmodule Stex.Socket do
   end
 
   def message_handle(%{type: "mutation", session: session, store: store} = message, state) do
-    Stex.Supervisor.mutate_store(message.session, message.store, message.data.name, message.data.data)
+    Storex.Supervisor.mutate_store(message.session, message.store, message.data.name, message.data.data)
     |> case do
       {:ok, diff} ->
         %{

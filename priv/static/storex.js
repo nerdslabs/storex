@@ -1,7 +1,7 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
-    (global = global || self, global.stex = factory());
+    (global = global || self, global.storex = factory());
 }(this, function () { 'use strict';
 
     /*! *****************************************************************************
@@ -81,7 +81,7 @@
                 else {
                     _this.connections.push({ resolve: resolve, reject: reject });
                     if (_this.socket === void 0) {
-                        var address = Stex.defaults.address || location.host + '/stex';
+                        var address = Storex.defaults.address || location.host + '/storex';
                         _this.socket = new WebSocket('ws://' + address);
                         _this.socket.binaryType = 'arraybuffer';
                         _this.socket.onopen = _this.opened.bind(_this);
@@ -155,7 +155,7 @@
             var code = event.code;
             var reason = event.reason;
             if (code >= 4000) {
-                console.error('[stex]', reason);
+                console.error('[storex]', reason);
             }
             else if (code === 1000) {
                 this.connect();
@@ -167,15 +167,15 @@
         return Socket;
     }());
     var socket = new Socket();
-    var Stex = /** @class */ (function () {
-        function Stex(config) {
+    var Storex = /** @class */ (function () {
+        function Storex(config) {
             this.listeners = [];
             this.session = config.session || null;
             this.config = config;
             this.socket = socket;
             this.state = null;
             if (!this.config.store) {
-                throw new Error('[stex] Store is required');
+                throw new Error('[storex] Store is required');
             }
             if (this.config.subscribe) {
                 if (typeof this.config.subscribe !== "function") {
@@ -185,19 +185,19 @@
             }
             this.socket.connect().then(this._connected.bind(this));
         }
-        Stex.prototype._connected = function () {
+        Storex.prototype._connected = function () {
             var _this = this;
             this.socket.stores[this.config.store] = this;
             this.socket.send({
                 type: 'join',
                 store: this.config.store,
-                data: __assign({}, Stex.defaults.params, this.config.params)
+                data: __assign({}, Storex.defaults.params, this.config.params)
             }).then(function (message) {
                 _this.session = message.session;
                 _this._mutate(message);
             });
         };
-        Stex.prototype._mutate = function (message) {
+        Storex.prototype._mutate = function (message) {
             if (message.diff !== void 0) {
                 this.state = Diff.patch(this.state, message.diff);
             }
@@ -209,7 +209,7 @@
                 listener(this.state);
             }
         };
-        Stex.prototype.commit = function (name) {
+        Storex.prototype.commit = function (name) {
             var _this = this;
             var data = [];
             for (var _i = 1; _i < arguments.length; _i++) {
@@ -236,7 +236,7 @@
                 });
             });
         };
-        Stex.prototype.subscribe = function (listener) {
+        Storex.prototype.subscribe = function (listener) {
             if (typeof listener !== "function") {
                 throw new ErrorEvent("Listener has to be a function.");
             }
@@ -249,12 +249,12 @@
                 }
             };
         };
-        Stex.defaults = {
+        Storex.defaults = {
             params: {},
         };
-        return Stex;
+        return Storex;
     }());
 
-    return Stex;
+    return Storex;
 
 }));

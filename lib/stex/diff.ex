@@ -1,4 +1,4 @@
-defmodule Stex.Diff do
+defmodule Storex.Diff do
 
   @doc """
     a: action

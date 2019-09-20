@@ -1,4 +1,4 @@
-defmodule Stex.Supervisor do
+defmodule Storex.Supervisor do
   @moduledoc false
 
   use DynamicSupervisor
@@ -16,11 +16,11 @@ defmodule Stex.Supervisor do
   end
 
   def via_tuple(session, store) do
-    {:via, Stex.Registries.Stores, {session, store}}
+    {:via, Storex.Registries.Stores, {session, store}}
   end
 
   def has_store(session, store) do
-    Stex.Registries.Stores.whereis_name({session, store})
+    Storex.Registries.Stores.whereis_name({session, store})
     |> case do
       :undefined -> false
       _ -> true
@@ -39,7 +39,7 @@ defmodule Stex.Supervisor do
   end
 
   def get_store_state(session, store) do
-    Stex.Registries.Stores.whereis_name({session, store})
+    Storex.Registries.Stores.whereis_name({session, store})
     |> :sys.get_state()
     |> Map.get(:state)
   end

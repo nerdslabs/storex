@@ -1,4 +1,4 @@
-declare module "stex" {
+declare module "storex" {
     interface StoreConfig {
         session?: string;
         store: string;
@@ -7,7 +7,7 @@ declare module "stex" {
         };
         subscribe?: () => void;
     }
-    class Stex {
+    class Storex {
         private session;
         private config;
         private socket;
@@ -25,5 +25,5 @@ declare module "stex" {
         commit(name: string, ...data: any): Promise<{}>;
         subscribe(listener: (state: any) => void): () => void;
     }
-    export default Stex;
+    export default Storex;
 }
