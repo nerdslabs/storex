@@ -39,10 +39,16 @@ defmodule StorexTest.Diff do
   end
 
   test "diff DateTime" do
-    assert [%{a: "u", p: [], t: "2019-09-25 10:35:00.628127Z"}] = Storex.Diff.check(~U[2019-09-25 10:33:59.628127Z], ~U[2019-09-25 10:35:00.628127Z])
+    assert [%{a: "u", p: [], t: "2000-02-29 23:10:00+01:00 CET Europe/Warsaw"}] = Storex.Diff.check(
+      %DateTime{year: 2000, month: 2, day: 29, zone_abbr: "CET",
+                hour: 22, minute: 0, second: 7, microsecond: {0, 0},
+                utc_offset: 3600, std_offset: 0, time_zone: "Europe/Warsaw"},
+      %DateTime{year: 2000, month: 2, day: 29, zone_abbr: "CET",
+                hour: 23, minute: 10, second: 0, microsecond: {0, 0},
+                utc_offset: 3600, std_offset: 0, time_zone: "Europe/Warsaw"})
   end
 
   test "diff NaiveDateTime" do
-    assert [%{a: "u", p: [], t: "2019-08-23 17:28:59"}] = Storex.Diff.check(~N[2019-08-09 17:28:59], ~N[2019-08-23 17:28:59])
+    assert [%{a: "u", p: [], t: "2015-01-23 23:50:07"}] = Storex.Diff.check(NaiveDateTime.from_iso8601!("2015-01-22 12:32:12"), NaiveDateTime.from_iso8601!("2015-01-23 23:50:07"))
   end
 end
