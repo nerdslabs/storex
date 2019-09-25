@@ -37,4 +37,12 @@ defmodule StorexTest.Diff do
   test "diff struct" do
     assert [%{a: "u", p: [:name], t: "B"}, %{a: "u", p: [:age], t: 10}] = Storex.Diff.check(%Struct{name: "A"}, %Struct{name: "B", age: 10})
   end
+
+  test "diff DateTime" do
+    assert [%{a: "u", p: [], t: "2019-09-25 10:35:00.628127Z"}] = Storex.Diff.check(~U[2019-09-25 10:33:59.628127Z], ~U[2019-09-25 10:35:00.628127Z])
+  end
+
+  test "diff NaiveDateTime" do
+    assert [%{a: "u", p: [], t: "2019-08-23 17:28:59"}] = Storex.Diff.check(~N[2019-08-09 17:28:59], ~N[2019-08-23 17:28:59])
+  end
 end

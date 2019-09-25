@@ -50,6 +50,19 @@ defmodule Storex.Diff do
   end
   defp compare_list([], [], changes, _), do: changes
 
+  defp compare_map(%NaiveDateTime{} = source, %NaiveDateTime{} = changed, changes, path) do
+    source = NaiveDateTime.to_string(source)
+    changed = NaiveDateTime.to_string(changed)
+
+    diff(source, changed, changes, path)
+  end
+  defp compare_map(%DateTime{} = source, %DateTime{} = changed, changes, path) do
+    source = DateTime.to_string(source)
+    changed = DateTime.to_string(changed)
+
+    diff(source, changed, changes, path)
+  end
+
   defp compare_map(%{__struct__: _} = source, %{__struct__: _} = changed, changes, path) do
     source = Map.from_struct(source)
     changed = Map.from_struct(changed)
