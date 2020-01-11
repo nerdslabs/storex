@@ -1,6 +1,7 @@
 <html lang="en">
 <head></head>
 <body>
+  <div class="connected"></div>
   <div class="session"></div>
   <div class="counter"></div>
   <div class="reply"></div>
@@ -9,6 +10,7 @@
 
   <script src="/static/storex.js"></script>
   <script>
+    const connected = document.querySelector('.connected')
     const session = document.querySelector('.session')
     const counter = document.querySelector('.counter')
     const reply = document.querySelector('.reply')
@@ -19,11 +21,13 @@
       subscribe: (state) => {
         session.innerHTML = store.session
         counter.innerHTML = state.counter
+      },
+      connection(state) {
+        connected.innerHTML = state
       }
     })
 
     document.querySelector('button.increase').addEventListener('click',  () => store.commit('increase'))
-
 
     document.querySelector('button.decrease').addEventListener('click', () => {
       store.commit('decrease').then(response => {

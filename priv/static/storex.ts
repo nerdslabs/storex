@@ -156,6 +156,8 @@ class Socket {
       this.connect()
     }
 
+    Object.values(this.stores).forEach(store => store._disconnected())
+
     if (this.keeper !== null) {
       clearInterval(this.keeper)
     }
@@ -169,13 +171,17 @@ interface StoreConfig {
   store: string
   params: {[key: string]: any}
   subscribe?: () => void
+  connection?: () => void
 }
 
 class Storex {
   private session: string
   private config: any
   private socket: Socket
-  private listeners: ((state: any) => void)[] = []
+  private listeners: { connection: ((state: boolean) => void)[], messages: ((state: any) => void)[]} = {
+    connection: [],
+    messages: [],
+  }
 
   public state: any
 
@@ -198,7 +204,11 @@ class Storex {
         throw new ErrorEvent("Listener has to be a function.")
       }
 
-      this.listeners.push(this.config.subscribe)
+      this.listeners.messages.push(this.config.subscribe)
+    }
+
+    if (this.config.connection) {
+      this.listeners.connection.push(this.config.connection)
     }
 
     this.socket.connect().then(this._connected.bind(this))
@@ -214,7 +224,19 @@ class Storex {
     }).then((message: Message) => {
       this.session = message.session
       this._mutate(message)
+
+      for (let i = 0; i < this.listeners.connection.length; i++) {
+        const listener = this.listeners.connection[i]
+        listener(this.socket.isConnected)
+      }
     })
+  }
+
+  _disconnected() {
+    for (let i = 0; i < this.listeners.connection.length; i++) {
+      const listener = this.listeners.connection[i]
+      listener(this.socket.isConnected)
+    }
   }
 
   _mutate(message: any) {
@@ -224,8 +246,8 @@ class Storex {
       this.state = message.data
     }
 
-    for (let i = 0; i < this.listeners.length; i++) {
-      const listener = this.listeners[i]
+    for (let i = 0; i < this.listeners.messages.length; i++) {
+      const listener = this.listeners.messages[i]
       listener(this.state)
     }
   }
@@ -257,13 +279,32 @@ class Storex {
       throw new ErrorEvent("Listener has to be a function.")
     }
 
-    this.listeners.push(listener)
+    this.listeners.messages.push(listener)
     listener(this.state)
 
     return function unsubscribe() {
-      const index = this.listeners.indexOf(listener)
+      const index = this.listeners.messages.indexOf(listener)
       if(index > -1) {
-        this.listeners.splice(index, 1)
+        this.listeners.messages.splice(index, 1)
+      }
+    }
+  }
+
+  connection(listener: (state: boolean) => void): () => void {
+    if (typeof listener !== "function") {
+      throw new ErrorEvent("Listener has to be a function.")
+    }
+
+    this.listeners.connection.push(listener)
+    
+    if(this.socket.isConnected) {
+      listener(this.socket.isConnected)
+    }
+
+    return function unsubscribe() {
+      const index = this.listeners.connection.indexOf(listener)
+      if (index > -1) {
+        this.listeners.connection.splice(index, 1)
       }
     }
   }

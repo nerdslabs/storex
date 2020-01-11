@@ -103,6 +103,9 @@ const store = new Storex({
   params: {},
   subscribe: (state) => {
     const state = state
+  },
+  connection: (state) => {
+    console.log(state ? 'connected' : 'disconnected')
   }
 })
 ```
@@ -133,6 +136,16 @@ You can subscribe to store state changes in javascript with function subscribe:
 ```javascript
 store.subscribe((state) => {
   const state = state
+})
+```
+
+### Subscribe to store connection
+
+You can subscribe to store connection state changes in javascript with function connection:
+
+```javascript
+store.connection((state) => {
+  console.log(state ? 'connected' : 'disconnected')
 })
 ```
 

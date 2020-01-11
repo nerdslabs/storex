@@ -6,6 +6,7 @@ declare module "storex" {
             [key: string]: any;
         };
         subscribe?: () => void;
+        connection?: () => void;
     }
     class Storex {
         private session;
@@ -21,9 +22,11 @@ declare module "storex" {
         };
         constructor(config: StoreConfig);
         _connected(): void;
+        _disconnected(): void;
         _mutate(message: any): void;
         commit(name: string, ...data: any): Promise<{}>;
         subscribe(listener: (state: any) => void): () => void;
+        connection(listener: (state: boolean) => void): () => void;
     }
     export default Storex;
 }

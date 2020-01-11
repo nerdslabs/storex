@@ -160,6 +160,7 @@
             else if (code === 1000) {
                 this.connect();
             }
+            Object.values(this.stores).forEach(function (store) { return store._disconnected(); });
             if (this.keeper !== null) {
                 clearInterval(this.keeper);
             }
@@ -169,7 +170,10 @@
     var socket = new Socket();
     var Storex = /** @class */ (function () {
         function Storex(config) {
-            this.listeners = [];
+            this.listeners = {
+                connection: [],
+                messages: [],
+            };
             this.session = config.session || null;
             this.config = config;
             this.socket = socket;
@@ -181,7 +185,10 @@
                 if (typeof this.config.subscribe !== "function") {
                     throw new ErrorEvent("Listener has to be a function.");
                 }
-                this.listeners.push(this.config.subscribe);
+                this.listeners.messages.push(this.config.subscribe);
+            }
+            if (this.config.connection) {
+                this.listeners.connection.push(this.config.connection);
             }
             this.socket.connect().then(this._connected.bind(this));
         }
@@ -195,7 +202,17 @@
             }).then(function (message) {
                 _this.session = message.session;
                 _this._mutate(message);
+                for (var i = 0; i < _this.listeners.connection.length; i++) {
+                    var listener = _this.listeners.connection[i];
+                    listener(_this.socket.isConnected);
+                }
             });
+        };
+        Storex.prototype._disconnected = function () {
+            for (var i = 0; i < this.listeners.connection.length; i++) {
+                var listener = this.listeners.connection[i];
+                listener(this.socket.isConnected);
+            }
         };
         Storex.prototype._mutate = function (message) {
             if (message.diff !== void 0) {
@@ -204,8 +221,8 @@
             else {
                 this.state = message.data;
             }
-            for (var i = 0; i < this.listeners.length; i++) {
-                var listener = this.listeners[i];
+            for (var i = 0; i < this.listeners.messages.length; i++) {
+                var listener = this.listeners.messages[i];
                 listener(this.state);
             }
         };
@@ -240,12 +257,27 @@
             if (typeof listener !== "function") {
                 throw new ErrorEvent("Listener has to be a function.");
             }
-            this.listeners.push(listener);
+            this.listeners.messages.push(listener);
             listener(this.state);
             return function unsubscribe() {
-                var index = this.listeners.indexOf(listener);
+                var index = this.listeners.messages.indexOf(listener);
                 if (index > -1) {
-                    this.listeners.splice(index, 1);
+                    this.listeners.messages.splice(index, 1);
+                }
+            };
+        };
+        Storex.prototype.connection = function (listener) {
+            if (typeof listener !== "function") {
+                throw new ErrorEvent("Listener has to be a function.");
+            }
+            this.listeners.connection.push(listener);
+            if (this.socket.isConnected) {
+                listener(this.socket.isConnected);
+            }
+            return function unsubscribe() {
+                var index = this.listeners.connection.indexOf(listener);
+                if (index > -1) {
+                    this.listeners.connection.splice(index, 1);
                 }
             };
         };

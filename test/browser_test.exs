@@ -20,6 +20,16 @@ defmodule StorexTest.Browser do
 
   hound_session()
 
+  test "test connected", _meta do
+    navigate_to("http://localhost:9999/")
+
+    :timer.sleep(500)
+
+    connected = find_element(:class, "connected")
+
+    assert inner_html(connected) == "true"
+  end
+
   test "basic state", _meta do
     navigate_to("http://localhost:9999/")
 
