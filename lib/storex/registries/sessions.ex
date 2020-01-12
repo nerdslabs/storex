@@ -1,4 +1,6 @@
 defmodule Storex.Registries.Sessions do
+  @moduledoc false
+
   use GenServer
 
   @registry :storex_sessions_registry

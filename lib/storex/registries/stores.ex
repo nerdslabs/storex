@@ -1,4 +1,6 @@
 defmodule Storex.Registries.Stores do
+  @moduledoc false
+
   use GenServer
 
   @registry :storex_stores_registry

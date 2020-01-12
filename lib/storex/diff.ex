@@ -1,17 +1,24 @@
 defmodule Storex.Diff do
 
   @doc """
-    a: action
-      n - none
-      u - update
-      d - delete
-      i - insert
-    f: from
-    t: to
-    p: path
-  """
+  Check difference between two arguments.
 
-  # get = (path, object) => path.reduce((o,i)=>o[i], object)
+  ```elixir
+  Storex.Diff.check(%{name: "John"}, %{name: "Adam"})
+  [%{a: "u", p: [:name], t: "Adam"}]
+  ```
+
+  Result explanation:
+  ```
+  a: action
+    n - none
+    u - update
+    d - delete
+    i - insert
+  t: to
+  p: path
+  ```
+  """
 
   def check(source, changed) do
     diff(source, changed, [], [])

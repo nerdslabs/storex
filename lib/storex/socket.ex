@@ -1,10 +1,13 @@
 defmodule Storex.Socket do
   @moduledoc """
-    Response codes:
+    Socket connection handler.
+
+    Error codes:
     - 4000: Store is not set.
     - 4001: Store is not defined or can't be compiled.
   """
 
+  @doc false
   def message_handle(%{type: "ping"} = message, state) do
     message =
       Map.put(message, :type, "pong")
