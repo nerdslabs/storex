@@ -1,6 +1,6 @@
 # Storex
 
-[![Travis](https://img.shields.io/travis/nerdslabs/storex.svg)](https://travis-ci.org/nerdslabs/storex)
+[![Travis](https://img.shields.io/travis/nerdslabs/storex.svg)](https://travis-ci.org/nerdslabs/storex) [![Downloads](https://img.shields.io/hexpm/dt/storex.svg)](https://hex.pm/packages/storex)
 
 Frontend store with the state on the backend. You are able to mutate store state from the frontend and also from the backend. Whole communication going through WebSocket.
 
@@ -16,9 +16,7 @@ Add **storex** to deps in `mix.exs`:
 
 ```elixir
 defp deps do
-  [
-    {:storex, git: "https://github.com/nerdslabs/storex"},
-  ]
+  [{:storex, "~> 0.1.0"}]
 end
 ```
 

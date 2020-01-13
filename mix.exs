@@ -16,7 +16,9 @@ defmodule Storex.MixProject do
       name: "storex",
       source_url: "https://github.com/nerdslabs/storex",
       homepage_url: "http://nerdslabs.co",
-      docs: docs()
+      docs: docs(),
+      description: description(),
+      package: package(),
     ]
   end
 
@@ -50,6 +52,19 @@ defmodule Storex.MixProject do
 
       # Tests
       {:hound, "~> 1.1", only: [:test]}
+    ]
+  end
+
+  defp description() do
+    "Frontend store managed in backend."
+  end
+
+  defp package() do
+    [
+      name: "storex",
+      files: ["lib", "priv", "mix.exs", "package.json", "README*", "LICENSE*", ".formatter.exs"],
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/nerdslabs/storex"}
     ]
   end
 end
