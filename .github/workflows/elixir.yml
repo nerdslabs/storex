@@ -16,11 +16,11 @@ jobs:
         elixir: ['1.8.2', '1.9.4', '1.10.3']
     steps:
     - uses: actions/checkout@v2  
-    - name: Run chromedriver
-      run: |
-        export DISPLAY=:99
-        chromedriver &
-        sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+#     - name: Run chromedriver
+#       run: |
+#         export DISPLAY=:99
+#         chromedriver &
+#         sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
     - name: Setup elixir
       uses: actions/setup-elixir@v1
       with:
@@ -29,4 +29,8 @@ jobs:
     - name: Install Dependencies
       run: mix deps.get
     - name: Run Tests
-      run: mix test
+      run: |
+        export DISPLAY=:99
+        chromedriver &
+        sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+        mix test
