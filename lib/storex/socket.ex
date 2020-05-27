@@ -22,9 +22,9 @@ defmodule Storex.Socket do
 
   def message_handle(%{type: "join"} = message, state) do
     Module.concat([message.store])
-    |> Code.ensure_compiled?()
+    |> Code.ensure_compiled()
     |> case do
-      true ->
+      {:module, _} ->
         if Storex.Supervisor.has_store(state.session, message.store) == false do
           Storex.Supervisor.add_store(state.session, message.store, message.data)
         end
@@ -38,7 +38,7 @@ defmodule Storex.Socket do
 
         {:reply, {:text, message}, state}
 
-      false ->
+      _ ->
         {:reply, {:close, 4001, "Store '#{message.store}' is not defined or can't be compiled."},
          state}
     end
