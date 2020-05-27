@@ -19,7 +19,7 @@ jobs:
     - name: Run chromedriver
       run: |
         export DISPLAY=:99
-        chromedriver --url-base=/wd/hub &
+        chromedriver &
     - name: Setup elixir
       uses: actions/setup-elixir@v1
       with:
