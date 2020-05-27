@@ -15,15 +15,14 @@ jobs:
         otp: ['21.3', '22.3', '23.0']
         elixir: ['1.8.2', '1.9.4', '1.10.3']
     steps:
-    - name: Prepare
     - uses: actions/checkout@v2  
     - name: Run chromedriver
-    - run: |
+      run: |
         export DISPLAY=:99
         chromedriver --url-base=/wd/hub &
         sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & # optional
     - name: Setup elixir
-    - uses: actions/setup-elixir@v1
+      uses: actions/setup-elixir@v1
       with:
         otp-version: ${{matrix.otp}}
         elixir-version: ${{matrix.elixir}}
