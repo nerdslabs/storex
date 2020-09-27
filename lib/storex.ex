@@ -22,7 +22,7 @@ defmodule Storex do
   Storex.mutate("d9ez7fgkp96", "ExampleApp.Store", "reload", ["user_id"])
   ```
   """
-  def mutate(session, store, mutation, payload \\ []) do
+  def mutate(session, store, mutation, payload \\ []) when is_binary(session) and is_binary(store) do
     Storex.Registries.Sessions.whereis_name(session)
     |> case do
       :undefined -> {:error, "Session #{session} not found."}
