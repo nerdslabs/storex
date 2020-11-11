@@ -4,4 +4,4 @@ use Mix.Config
 
 config :storex, :session_id_library, Nanoid
 
-config :hound, driver: "chrome_driver", browser: "chrome_headless"
+config :hound, driver: "chrome_driver", browser: "chrome_headless", retries: 3, genserver_timeout: 480000, retry_time: 3000
