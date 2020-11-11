@@ -1,6 +1,6 @@
 # Storex
 
-[![Travis](https://img.shields.io/travis/nerdslabs/storex.svg)](https://travis-ci.org/nerdslabs/storex) [![Downloads](https://img.shields.io/hexpm/dt/storex.svg)](https://hex.pm/packages/storex)
+![Elixir CI](https://github.com/nerdslabs/storex/workflows/Elixir%20CI/badge.svg) [![Downloads](https://img.shields.io/hexpm/dt/storex.svg)](https://hex.pm/packages/storex)
 
 Frontend store with the state on the backend. You are able to mutate store state from the frontend and also from the backend. Whole communication going through WebSocket.
 
@@ -113,11 +113,11 @@ const store = new Storex({
 You can mutate store from javascript with store instance:
 
 ```javascript
-store.mutate("increase")
-store.mutate("decrease").then((response) => {
+store.commit("increase")
+store.commit("decrease").then((response) => {
   response // Reply from elixir
 })
-store.mutate("set", 10)
+store.commit("set", 10)
 ```
 
 Or directly from elixir:
