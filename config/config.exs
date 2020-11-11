@@ -4,4 +4,4 @@ use Mix.Config
 
 config :storex, :session_id_library, Nanoid
 
-config :hound, driver: "selenium"
+config :hound, driver: "chrome_driver", browser: "chrome_headless"
