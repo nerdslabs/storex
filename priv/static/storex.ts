@@ -274,7 +274,7 @@ class Storex<T> {
     })
   }
 
-  subscribe(listener: (state: any) => void): () => void {
+  subscribe(listener: (state: T) => void): () => void {
     if(typeof listener !== "function") {
       throw new ErrorEvent("Listener has to be a function.")
     }
