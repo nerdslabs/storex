@@ -3,7 +3,7 @@ defmodule Storex.Store do
   Called when store session starts.
   """
   @callback init(session_id :: binary(), params :: any()) :: any()
-  @callback mutation(name :: binary(), data :: any(), session_id :: binary(), params :: any(), state :: any()) :: {:replay, message :: any(), state :: any()} | {:noreplay, state :: any()} | {:error, state :: any()}
+  @callback mutation(name :: binary(), data :: any(), session_id :: binary(), params :: any(), state :: any()) :: {:reply, message :: any(), state :: any()} | {:noreply, state :: any()} | {:error, state :: any()}
   @doc """
   Called when store session ends.
   """
