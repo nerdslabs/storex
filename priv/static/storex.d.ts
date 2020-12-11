@@ -8,12 +8,12 @@ declare module "storex" {
         subscribe?: () => void;
         connection?: () => void;
     }
-    class Storex {
+    class Storex<T> {
         private session;
         private config;
         private socket;
         private listeners;
-        state: any;
+        state: T;
         static defaults: {
             params: {
                 [key: string]: any;

@@ -55,7 +55,7 @@ class Socket {
 
   private connections: any[] = []
 
-  public stores: { [key: string]: Storex }
+  public stores: { [key: string]: Storex<any> }
 
   constructor() {
     this.keeper = null
@@ -174,16 +174,16 @@ interface StoreConfig {
   connection?: () => void
 }
 
-class Storex {
+class Storex<T> {
   private session: string
   private config: any
   private socket: Socket
-  private listeners: { connection: ((state: boolean) => void)[], messages: ((state: any) => void)[]} = {
+  private listeners: { connection: ((state: boolean) => void)[], messages: ((state: T) => void)[]} = {
     connection: [],
     messages: [],
   }
 
-  public state: any
+  public state: T
 
   public static defaults: { params: { [key: string]: any }, address?: string } = {
     params: {},
