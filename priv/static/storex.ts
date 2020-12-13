@@ -73,6 +73,7 @@ class Socket {
 
         if (this.socket === void 0) {
           const address = Storex.defaults.address || location.host + '/storex'
+          const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://'
 
           this.socket = new WebSocket('ws://' + address)
           this.socket.binaryType = 'arraybuffer'
