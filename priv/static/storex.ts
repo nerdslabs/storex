@@ -75,7 +75,7 @@ class Socket {
           const address = Storex.defaults.address || location.host + '/storex'
           const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://'
 
-          this.socket = new WebSocket('ws://' + address)
+          this.socket = new WebSocket(protocol + address)
           this.socket.binaryType = 'arraybuffer'
 
           this.socket.onopen = this.opened.bind(this)

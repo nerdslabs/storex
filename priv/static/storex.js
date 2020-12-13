@@ -83,7 +83,7 @@
                     if (_this.socket === void 0) {
                         var address = Storex.defaults.address || location.host + '/storex';
                         var protocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
-                        _this.socket = new WebSocket('ws://' + address);
+                        _this.socket = new WebSocket(protocol + address);
                         _this.socket.binaryType = 'arraybuffer';
                         _this.socket.onopen = _this.opened.bind(_this);
                         _this.socket.onclose = _this.closed.bind(_this);
