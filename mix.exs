@@ -1,7 +1,7 @@
 defmodule Storex.MixProject do
   use Mix.Project
 
-  @version "0.1.3"
+  @version "0.2.0"
 
   def project do
     [
@@ -42,13 +42,13 @@ defmodule Storex.MixProject do
 
   defp deps do
     [
-      {:cowboy, "~> 2.6"},
-      {:nanoid, "~> 2.0.1"},
+      {:cowboy, "~> 2.9"},
+      {:nanoid, "~> 2.0"},
       {:jason, "~> 1.0", optional: true},
 
       # Docs
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.3", only: [:dev], runtime: false},
+      {:ex_doc, "~> 0.26", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.1.0", only: [:dev], runtime: false},
 
       # Tests
       {:hound, "~> 1.1", only: [:test]}

@@ -36,7 +36,7 @@ defmodule Storex.Store do
         end
 
         def start_link([], session: session, store: store, params: params) do
-          GenServer.start_link(Server, {params, session}, name: Storex.Supervisor.via_tuple(session, store))
+          GenServer.start_link(Server, {params, session}, name: Storex.Supervisor.name(session, store))
         end
 
         def handle_cast(:session_ended, state) do
@@ -73,14 +73,6 @@ defmodule Storex.Store do
 
         def handle_call(call, _, _state) do
           raise "Not handled call: #{inspect call}"
-        end
-
-        def child_spec(opts) do
-          %{
-            id: Server,
-            start: {Server, :start_link, [opts]},
-            restart: :transient
-          }
         end
       end
     end

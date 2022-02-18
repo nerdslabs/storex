@@ -15,40 +15,52 @@ defmodule Storex.Supervisor do
     )
   end
 
-  def via_tuple(session, store) do
-    {:via, Storex.Registries.Stores, {session, store}}
-  end
-
   def has_store(session, store) do
-    Storex.Registries.Stores.whereis_name({session, store})
+    Storex.Registry.get_store_pid(session, store)
     |> case do
       :undefined -> false
       _ -> true
     end
   end
 
+  def name(session, store) do
+    String.to_atom("#{session}_#{store}")
+  end
+
   def add_store(session, store, params \\ %{}) do
     store_server = Module.concat([store, "Server"])
     spec = {store_server, [session: session, store: store, params: params]}
+    # spec = %{
+    #   id: name(session, store),
+    #   start: {store_server, :start_link, [session: session, store: store, params: params]}
+    # }
     # TODO: If server not start error is not raised!
     DynamicSupervisor.start_child(__MODULE__, spec)
     |> case do
       {:error, error} -> IO.warn(error)
       result -> result
     end
+    |> case do
+      {:ok, pid} ->
+        Storex.Registry.register_store(session, store, pid)
+      _ ->
+        :error
+    end
   end
 
   def get_store_state(session, store) do
-    Storex.Registries.Stores.whereis_name({session, store})
+    Storex.Registry.get_store_pid(session, store)
     |> :sys.get_state()
     |> Map.get(:state)
   end
 
   def mutate_store(session, store, name, data) do
-    GenServer.call(via_tuple(session, store), {name, data})
+    Storex.Registry.get_store_pid(session, store)
+    |> GenServer.call({name, data})
   end
 
   def remove_store(session, store) do
-    GenServer.cast(via_tuple(session, store), :session_ended)
+    Storex.Registry.get_store_pid(session, store)
+    |> GenServer.cast(:session_ended)
   end
 end
