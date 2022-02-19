@@ -18,12 +18,12 @@ defmodule Storex.Socket.Handler do
   end
 
   def terminate(_reason, _req, %{session: session}) do
-    Storex.Registry.unregister_session(session)
-
     Storex.Registry.session_stores(session)
     |> Enum.each(fn {session, store, _} ->
       Storex.Supervisor.remove_store(session, store)
     end)
+
+    Storex.Registry.unregister_session(session)
 
     :ok
   end
