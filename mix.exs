@@ -8,7 +8,7 @@ defmodule Storex.MixProject do
       app: :storex,
       version: @version,
       elixir: "~> 1.6",
-      elixirc_paths: elixirc_paths(Mix.env),
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
 
@@ -18,7 +18,7 @@ defmodule Storex.MixProject do
       homepage_url: "http://nerdslabs.co",
       docs: docs(),
       description: description(),
-      package: package(),
+      package: package()
     ]
   end
 

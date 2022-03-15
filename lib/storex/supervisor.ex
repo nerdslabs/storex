@@ -39,6 +39,7 @@ defmodule Storex.Supervisor do
     |> case do
       {:ok, pid} ->
         Storex.Registry.register_store(session, store, pid)
+
       _ ->
         :error
     end

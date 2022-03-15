@@ -3,7 +3,16 @@ defmodule Storex.Store do
   Called when store session starts.
   """
   @callback init(session_id :: binary(), params :: any()) :: any()
-  @callback mutation(name :: binary(), data :: any(), session_id :: binary(), params :: any(), state :: any()) :: {:reply, message :: any(), state :: any()} | {:noreply, state :: any()} | {:error, state :: any()}
+  @callback mutation(
+              name :: binary(),
+              data :: any(),
+              session_id :: binary(),
+              params :: any(),
+              state :: any()
+            ) ::
+              {:reply, message :: any(), state :: any()}
+              | {:noreply, state :: any()}
+              | {:error, state :: any()}
   @doc """
   Called when store session ends.
   """
@@ -28,15 +37,18 @@ defmodule Storex.Store do
         def init({params, session}) do
           init_state = @store.init(session, params)
 
-          {:ok, %{
-            state: init_state,
-            session: session,
-            params: params
-          }}
+          {:ok,
+           %{
+             state: init_state,
+             session: session,
+             params: params
+           }}
         end
 
         def start_link([], session: session, store: store, params: params) do
-          GenServer.start_link(Server, {params, session}, name: Storex.Supervisor.name(session, store))
+          GenServer.start_link(Server, {params, session},
+            name: Storex.Supervisor.name(session, store)
+          )
         end
 
         def handle_cast(:session_ended, state) do
@@ -55,24 +67,34 @@ defmodule Storex.Store do
                 diff = Storex.Diff.check(state.state, result)
                 state = Map.put(state, :state, result)
                 {:reply, {:ok, message, diff}, state}
+
               {:noreply, result} ->
                 diff = Storex.Diff.check(state.state, result)
                 state = Map.put(state, :state, result)
                 {:reply, {:ok, diff}, state}
+
               {:error, error} ->
                 {:reply, {:error, error}, state}
+
               _ ->
-                {:reply, {:error, "Return value of mutation should be {:reply, message, state}, {:noreply, state} or {:error, error}"}, state}
+                {:reply,
+                 {:error,
+                  "Return value of mutation should be {:reply, message, state}, {:noreply, state} or {:error, error}"},
+                 state}
             end
+
             # {:reply, {:ok, result}, state}
           rescue
             e in FunctionClauseError ->
-              {:reply, {:error, "No mutation matching #{inspect name} with data #{inspect data} in store #{inspect @store}"}, state}
+              {:reply,
+               {:error,
+                "No mutation matching #{inspect(name)} with data #{inspect(data)} in store #{inspect(@store)}"},
+               state}
           end
         end
 
         def handle_call(call, _, _state) do
-          raise "Not handled call: #{inspect call}"
+          raise "Not handled call: #{inspect(call)}"
         end
       end
     end

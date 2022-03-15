@@ -91,5 +91,4 @@ defmodule Storex.Registry.ETS do
 
     {:noreply, :ok}
   end
-
 end

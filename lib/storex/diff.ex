@@ -1,5 +1,4 @@
 defmodule Storex.Diff do
-
   @doc """
   Check difference between two arguments.
 
@@ -51,10 +50,12 @@ defmodule Storex.Diff do
     changes = [%{a: "d", p: path ++ [li]} | changes]
     compare_list(lt, [], changes, path)
   end
+
   defp compare_list([], [{r, ri} | rt], changes, path) do
     changes = [%{a: "i", t: r, p: path ++ [ri]} | changes]
     compare_list([], rt, changes, path)
   end
+
   defp compare_list([], [], changes, _), do: changes
 
   defp compare_map(%NaiveDateTime{} = source, %NaiveDateTime{} = changed, changes, path) do
@@ -63,6 +64,7 @@ defmodule Storex.Diff do
 
     diff(source, changed, changes, path)
   end
+
   defp compare_map(%DateTime{} = source, %DateTime{} = changed, changes, path) do
     source = DateTime.to_string(source)
     changed = DateTime.to_string(changed)
@@ -76,11 +78,13 @@ defmodule Storex.Diff do
 
     compare_map(source, changed, changes, path)
   end
+
   defp compare_map(%{__struct__: _} = source, %{} = changed, changes, path) do
     source = Map.from_struct(source)
 
     compare_map(source, changed, changes, path)
   end
+
   defp compare_map(%{} = source, %{__struct__: _} = changed, changes, path) do
     changed = Map.from_struct(changed)
 
@@ -94,7 +98,9 @@ defmodule Storex.Diff do
 
   defp compare_map({key, value}, acc, changed, path, true) do
     case Map.has_key?(changed, key) do
-      false -> [%{a: "d", p: path ++ [key]} | acc]
+      false ->
+        [%{a: "d", p: path ++ [key]} | acc]
+
       true ->
         changed_value = Map.get(changed, key)
         diff(value, changed_value, acc, path ++ [key])

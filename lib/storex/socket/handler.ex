@@ -61,7 +61,8 @@ defmodule Storex.Socket.Handler do
         data: data,
         name: mutation
       }
-    } |> Socket.message_handle(state)
+    }
+    |> Socket.message_handle(state)
   end
 
   def websocket_info(_info, state) do
