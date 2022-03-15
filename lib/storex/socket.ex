@@ -3,8 +3,8 @@ defmodule Storex.Socket do
     Socket connection handler.
 
     Error codes:
-    - 4000: Store is not set.
-    - 4001: Store is not defined or can't be compiled.
+    - `4000`: Store is not set.
+    - `4001`: Store is not defined or can't be compiled.
   """
 
   @doc false
