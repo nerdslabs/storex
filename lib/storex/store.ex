@@ -82,8 +82,6 @@ defmodule Storex.Store do
                   "Return value of mutation should be {:reply, message, state}, {:noreply, state} or {:error, error}"},
                  state}
             end
-
-            # {:reply, {:ok, result}, state}
           rescue
             e in FunctionClauseError ->
               {:reply,

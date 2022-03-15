@@ -29,7 +29,13 @@ defmodule Storex.Supervisor do
 
   def add_store(session, store, params \\ %{}) do
     store_server = Module.concat([store, "Server"])
-    spec = {store_server, [session: session, store: store, params: params]}
+
+    spec = %{
+      id: store_server,
+      start: {store_server, :start_link, [[session: session, store: store, params: params]]},
+      restart: :transient
+    }
+
     # TODO: If server not start error is not raised!
     DynamicSupervisor.start_child(__MODULE__, spec)
     |> case do
