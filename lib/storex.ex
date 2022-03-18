@@ -1,5 +1,4 @@
 defmodule Storex do
-
   use Application
 
   @doc false
@@ -7,8 +6,7 @@ defmodule Storex do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Storex.Registries.Sessions, []),
-      worker(Storex.Registries.Stores, []),
+      worker(Storex.Registry.ETS, []),
       supervisor(Storex.Supervisor, [])
     ]
 
@@ -19,11 +17,14 @@ defmodule Storex do
   Mutate store from elixir.
 
   ```elixir
+  Call mutation callback in store synchronously.
+
   Storex.mutate("d9ez7fgkp96", "ExampleApp.Store", "reload", ["user_id"])
   ```
   """
-  def mutate(session, store, mutation, payload \\ []) when is_binary(session) and is_binary(store) do
-    Storex.Registries.Sessions.whereis_name(session)
+  def mutate(session, store, mutation, payload \\ [])
+      when is_binary(session) and is_binary(store) do
+    Storex.Registry.session_pid(session)
     |> case do
       :undefined -> {:error, "Session #{session} not found."}
       pid -> Kernel.send(pid, {:mutate, store, mutation, payload})

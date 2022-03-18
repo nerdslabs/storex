@@ -3,17 +3,20 @@ defmodule StorexTest.Browser do
   use Hound.Helpers
 
   setup_all do
-    dispatch = :cowboy_router.compile([
-      {:_, [
-        {"/static/[...]", :cowboy_static, {:dir, "priv/static"}},
-        {"/storex", Storex.Socket.Handler, []},
-        {:_, StorexTest.Browser.Handler, []},
-      ]}
-    ])
+    dispatch =
+      :cowboy_router.compile([
+        {:_,
+         [
+           {"/static/[...]", :cowboy_static, {:dir, "priv/static"}},
+           {"/storex", Storex.Socket.Handler, []},
+           {:_, StorexTest.Browser.Handler, []}
+         ]}
+      ])
 
-    {:ok, _} = :cowboy.start_clear(:test_http, [{:port, 9999}], %{
-      :env => %{dispatch: dispatch}
-    })
+    {:ok, _} =
+      :cowboy.start_clear(:test_http, [{:port, 9999}], %{
+        :env => %{dispatch: dispatch}
+      })
 
     :ok
   end
@@ -85,5 +88,4 @@ defmodule StorexTest.Browser do
 
     assert inner_html(reply) == "decreased"
   end
-
 end

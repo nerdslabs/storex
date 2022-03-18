@@ -3,8 +3,8 @@ defmodule Storex.Socket do
     Socket connection handler.
 
     Error codes:
-    - 4000: Store is not set.
-    - 4001: Store is not defined or can't be compiled.
+    - `4000`: Store is not set.
+    - `4001`: Store is not defined or can't be compiled.
   """
 
   @doc false
@@ -45,7 +45,12 @@ defmodule Storex.Socket do
   end
 
   def message_handle(%{type: "mutation", session: session, store: store} = message, state) do
-    Storex.Supervisor.mutate_store(message.session, message.store, message.data.name, message.data.data)
+    Storex.Supervisor.mutate_store(
+      message.session,
+      message.store,
+      message.data.name,
+      message.data.data
+    )
     |> case do
       {:ok, diff} ->
         %{
@@ -55,6 +60,7 @@ defmodule Storex.Socket do
           diff: diff,
           request: Map.get(message, :request, nil)
         }
+
       {:ok, reply_message, diff} ->
         %{
           type: "mutation",
@@ -64,6 +70,7 @@ defmodule Storex.Socket do
           message: reply_message,
           request: Map.get(message, :request, nil)
         }
+
       {:error, error} ->
         %{
           type: "error",

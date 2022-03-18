@@ -10,17 +10,18 @@ defmodule StorexTest.Store.Counter do
   def mutation("increase", _data, _session_id, _params, state) do
     counter = state.counter + 1
 
-    {:noreply, %{
-      counter: counter
-    }}
+    {:noreply,
+     %{
+       counter: counter
+     }}
   end
 
   def mutation("decrease", _data, _session_id, _params, state) do
     counter = state.counter - 1
 
-    {:reply, "decreased", %{
-      counter: counter
-    }}
+    {:reply, "decreased",
+     %{
+       counter: counter
+     }}
   end
-
 end

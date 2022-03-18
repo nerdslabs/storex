@@ -71,19 +71,20 @@ defmodule ExampleApp.Store.Counter do
     0
   end
 
-  def mutation("increase", _data, _session_id, _params, state) do
+  # `increase` is mutation name, `data` is payload from front-end, `session_id` is current session id of connecton, `initial_params` with which store was initialized, `state` is store current state.
+  def mutation("increase", _data, _session_id, _initial_params, state) do
     state = state + 1
 
     {:noreply, state}
   end
 
-  def mutation("decrease", _data, _session_id, _params, state) do
+  def mutation("decrease", _data, _session_id, _initial_params, state) do
     state = state - 1
 
     {:reply, "message", state}
   end
 
-  def mutation("set", [number], _session_id, _params, state) do
+  def mutation("set", [number], _session_id, _initial_params, state) do
     {:noreply, number}
   end
 end

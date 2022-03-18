@@ -8,7 +8,7 @@ defmodule Storex.Socket.Handler do
   def init(request, _state) do
     session = Application.get_env(:storex, :session_id_library, Nanoid).generate()
 
-    Storex.Registries.Sessions.register_name(session, request.pid)
+    Storex.Registry.register_session(session, request.pid)
 
     {:cowboy_websocket, request, %{session: session, pid: request.pid}}
   end
@@ -18,12 +18,12 @@ defmodule Storex.Socket.Handler do
   end
 
   def terminate(_reason, _req, %{session: session}) do
-    Storex.Registries.Sessions.unregister_name(session)
-
-    Storex.Registries.Stores.lookup(session)
+    Storex.Registry.session_stores(session)
     |> Enum.each(fn {session, store, _} ->
       Storex.Supervisor.remove_store(session, store)
     end)
+
+    Storex.Registry.unregister_session(session)
 
     :ok
   end
@@ -61,7 +61,8 @@ defmodule Storex.Socket.Handler do
         data: data,
         name: mutation
       }
-    } |> Socket.message_handle(state)
+    }
+    |> Socket.message_handle(state)
   end
 
   def websocket_info(_info, state) do
