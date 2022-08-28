@@ -2,21 +2,21 @@
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
     (global = global || self, global.storex = factory());
-}(this, function () { 'use strict';
+}(this, (function () { 'use strict';
 
     /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation. All rights reserved.
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-    this file except in compliance with the License. You may obtain a copy of the
-    License at http://www.apache.org/licenses/LICENSE-2.0
+    Copyright (c) Microsoft Corporation.
 
-    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-    MERCHANTABLITY OR NON-INFRINGEMENT.
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
 
-    See the Apache Version 2.0 License for specific language governing permissions
-    and limitations under the License.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
     ***************************************************************************** */
 
     var __assign = function() {
@@ -76,7 +76,7 @@
             var _this = this;
             return new Promise(function (resolve, reject) {
                 if (_this.isConnected) {
-                    resolve();
+                    resolve(true);
                 }
                 else {
                     _this.connections.push({ resolve: resolve, reject: reject });
@@ -96,7 +96,7 @@
             get: function () {
                 return this.socket !== void 0 && this.socket.readyState === this.socket.OPEN;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Socket.prototype.send = function (data) {
@@ -178,7 +178,6 @@
             this.session = config.session || null;
             this.config = config;
             this.socket = socket;
-            this.state = null;
             if (!this.config.store) {
                 throw new Error('[storex] Store is required');
             }
@@ -199,7 +198,7 @@
             this.socket.send({
                 type: 'join',
                 store: this.config.store,
-                data: __assign({}, Storex.defaults.params, this.config.params)
+                data: __assign(__assign({}, Storex.defaults.params), this.config.params)
             }).then(function (message) {
                 _this.session = message.session;
                 _this._mutate(message);
@@ -247,7 +246,7 @@
                         resolve(message.message);
                     }
                     else {
-                        resolve();
+                        resolve(undefined);
                     }
                 }, function (error) {
                     reject(error.error);
@@ -261,7 +260,7 @@
             this.listeners.messages.push(listener);
             listener(this.state);
             return function unsubscribe() {
-                var index = this.listeners.messages.indexOf(listener);
+                var index = this === null || this === void 0 ? void 0 : this.listeners.messages.indexOf(listener);
                 if (index > -1) {
                     this.listeners.messages.splice(index, 1);
                 }
@@ -290,4 +289,4 @@
 
     return Storex;
 
-}));
+})));

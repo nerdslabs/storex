@@ -24,7 +24,7 @@ declare module "storex" {
         _connected(): void;
         _disconnected(): void;
         _mutate(message: any): void;
-        commit(name: string, ...data: any): Promise<{}>;
+        commit<T>(name: string, ...data: any): Promise<T | undefined>;
         subscribe(listener: (state: T) => void): () => void;
         connection(listener: (state: boolean) => void): () => void;
     }

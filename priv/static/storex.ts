@@ -1,4 +1,4 @@
-interface Message {
+interface Response {
   type: string
   store: string
   session: string
@@ -67,7 +67,7 @@ class Socket {
   connect(): Promise<any> {
     return new Promise((resolve, reject) => {
       if (this.isConnected) {
-        resolve()
+        resolve(true)
       } else {
         this.connections.push({ resolve, reject })
 
@@ -90,7 +90,7 @@ class Socket {
     return this.socket !== void 0 && this.socket.readyState === this.socket.OPEN
   }
 
-  send(data: any): Promise<Message> {
+  send(data: any): Promise<Response> {
     return new Promise((resolve, reject) => {
       const request = Math.random().toString(36).substr(2, 5)
       const payload = data
@@ -176,7 +176,7 @@ interface StoreConfig {
 }
 
 class Storex<T> {
-  private session: string
+  private session: string | null
   private config: any
   private socket: Socket
   private listeners: { connection: ((state: boolean) => void)[], messages: ((state: T) => void)[]} = {
@@ -194,7 +194,6 @@ class Storex<T> {
     this.session = config.session || null
     this.config = config
     this.socket = socket
-    this.state = null
 
     if (!this.config.store) {
       throw new Error('[storex] Store is required')
@@ -222,9 +221,9 @@ class Storex<T> {
       type: 'join',
       store: this.config.store,
       data: { ...Storex.defaults.params, ...this.config.params }
-    }).then((message: Message) => {
-      this.session = message.session
-      this._mutate(message)
+    }).then((response: Response) => {
+      this.session = response.session
+      this._mutate(response)
 
       for (let i = 0; i < this.listeners.connection.length; i++) {
         const listener = this.listeners.connection[i]
@@ -253,7 +252,7 @@ class Storex<T> {
     }
   }
 
-  commit(name: string, ...data: any) {
+  commit<T>(name: string, ...data: any): Promise<T | undefined> {
     return new Promise((resolve, reject) => {
       this.socket.send({
         type: 'mutation',
@@ -262,12 +261,12 @@ class Storex<T> {
         data: {
           name, data
         }
-      }).then((message: Message) => {
-        this._mutate(message)
-        if (message.message !== void 0) {
-          resolve(message.message)
+      }).then((response: Response) => {
+        this._mutate(response)
+        if (response.message !== void 0) {
+          resolve(response.message)
         } else {
-          resolve()
+          resolve(undefined);
         }
       }, (error: Error) => {
         reject(error.error)
@@ -284,7 +283,7 @@ class Storex<T> {
     listener(this.state)
 
     return function unsubscribe() {
-      const index = this.listeners.messages.indexOf(listener)
+      const index = this?.listeners.messages.indexOf(listener)
       if(index > -1) {
         this.listeners.messages.splice(index, 1)
       }
