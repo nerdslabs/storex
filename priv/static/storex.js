@@ -1,10 +1,10 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
-    (global = global || self, global.storex = factory());
-}(this, (function () { 'use strict';
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.storex = factory());
+})(this, (function () { 'use strict';
 
-    /*! *****************************************************************************
+    /******************************************************************************
     Copyright (c) Microsoft Corporation.
 
     Permission to use, copy, modify, and/or distribute this software for any
@@ -51,13 +51,13 @@
         Diff.patch = function (source, changes) {
             for (var _i = 0, changes_1 = changes; _i < changes_1.length; _i++) {
                 var change = changes_1[_i];
-                if (change.a === "u") {
+                if (change.a === 'u') {
                     Diff.set(source, change.p, change.t);
                 }
-                else if (change.a === "d") {
+                else if (change.a === 'd') {
                     Diff.remove(source, change.p);
                 }
-                else if (change.a === "i") {
+                else if (change.a === 'i') {
                     Diff.set(source, change.p, change.t);
                 }
             }
@@ -67,34 +67,30 @@
     }());
     var Socket = /** @class */ (function () {
         function Socket() {
-            this.connections = [];
+            this.socket = null;
+            this.connectListeners = [];
             this.keeper = null;
             this.requests = {};
             this.stores = {};
         }
         Socket.prototype.connect = function () {
-            var _this = this;
-            return new Promise(function (resolve, reject) {
-                if (_this.isConnected) {
-                    resolve(true);
-                }
-                else {
-                    _this.connections.push({ resolve: resolve, reject: reject });
-                    if (_this.socket === void 0) {
-                        var address = Storex.defaults.address || location.host + '/storex';
-                        var protocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
-                        _this.socket = new WebSocket(protocol + address);
-                        _this.socket.binaryType = 'arraybuffer';
-                        _this.socket.onopen = _this.opened.bind(_this);
-                        _this.socket.onclose = _this.closed.bind(_this);
-                        _this.socket.onmessage = _this.message.bind(_this);
-                    }
-                }
-            });
+            if (this.isConnected === false && this.socket === null) {
+                var address = Storex.defaults.address || location.host + '/storex';
+                var protocol = location.protocol === 'https:' ? 'wss://' : 'ws://';
+                this.socket = new WebSocket(protocol + address);
+                this.socket.binaryType = 'arraybuffer';
+                this.socket.onopen = this.opened.bind(this);
+                this.socket.onclose = this.closed.bind(this);
+                this.socket.onmessage = this.message.bind(this);
+            }
+        };
+        Socket.prototype.onConnect = function (listener) {
+            this.connectListeners.push(listener);
         };
         Object.defineProperty(Socket.prototype, "isConnected", {
             get: function () {
-                return this.socket !== void 0 && this.socket.readyState === this.socket.OPEN;
+                var _a;
+                return this.socket !== void 0 && ((_a = this.socket) === null || _a === void 0 ? void 0 : _a.readyState) === WebSocket.OPEN;
             },
             enumerable: false,
             configurable: true
@@ -102,10 +98,11 @@
         Socket.prototype.send = function (data) {
             var _this = this;
             return new Promise(function (resolve, reject) {
+                var _a;
                 var request = Math.random().toString(36).substr(2, 5);
                 var payload = data;
                 payload.request = request;
-                _this.socket.send(JSON.stringify(payload));
+                (_a = _this.socket) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(payload));
                 _this.requests[request] = [resolve, reject];
             });
         };
@@ -114,7 +111,7 @@
             var request = this.requests[data.request];
             if (request !== void 0) {
                 var resolve = request[0], reject = request[1];
-                if (data.type === "error") {
+                if (data.type === 'error') {
                     reject(data);
                 }
                 else {
@@ -122,7 +119,7 @@
                 }
             }
             else {
-                if (data.type === "mutation") {
+                if (data.type === 'mutation') {
                     var store = this.stores[data.store];
                     if (store !== void 0) {
                         store._mutate(data);
@@ -132,14 +129,12 @@
         };
         Socket.prototype.opened = function (event) {
             var _this = this;
-            if (this.socket.readyState === this.socket.OPEN) {
-                while (this.connections.length > 0) {
-                    var _a = this.connections.shift(), resolve = _a.resolve, _ = _a._;
-                    resolve();
-                }
+            var _a;
+            if (((_a = this.socket) === null || _a === void 0 ? void 0 : _a.readyState) === WebSocket.OPEN) {
+                this.connectListeners.forEach(function (listener) { return listener(); });
                 this.keeper = setInterval(function () {
                     _this.send({
-                        type: 'ping'
+                        type: 'ping',
                     });
                 }, 30000);
             }
@@ -148,17 +143,13 @@
             }
         };
         Socket.prototype.closed = function (event) {
-            while (this.connections.length > 0) {
-                var _a = this.connections.shift(), _ = _a._, reject = _a.reject;
-                reject();
-            }
-            console.log(event);
+            this.socket = null;
             var code = event.code;
             var reason = event.reason;
             if (code >= 4000) {
                 console.error('[storex]', reason);
             }
-            else if (code === 1000) {
+            else if ([1000, 1005, 1006].includes(code)) {
                 this.connect();
             }
             Object.values(this.stores).forEach(function (store) { return store._disconnected(); });
@@ -182,26 +173,29 @@
                 throw new Error('[storex] Store is required');
             }
             if (this.config.subscribe) {
-                if (typeof this.config.subscribe !== "function") {
-                    throw new ErrorEvent("Listener has to be a function.");
+                if (typeof this.config.subscribe !== 'function') {
+                    throw new ErrorEvent('Listener has to be a function.');
                 }
                 this.listeners.messages.push(this.config.subscribe);
             }
             if (this.config.connection) {
                 this.listeners.connection.push(this.config.connection);
             }
-            this.socket.connect().then(this._connected.bind(this));
+            this.socket.onConnect(this._connected.bind(this));
+            this.socket.connect();
         }
         Storex.prototype._connected = function () {
             var _this = this;
             this.socket.stores[this.config.store] = this;
-            this.socket.send({
+            this.socket
+                .send({
                 type: 'join',
                 store: this.config.store,
-                data: __assign(__assign({}, Storex.defaults.params), this.config.params)
-            }).then(function (message) {
-                _this.session = message.session;
-                _this._mutate(message);
+                data: __assign(__assign({}, Storex.defaults.params), this.config.params),
+            })
+                .then(function (response) {
+                _this.session = response.session;
+                _this._mutate(response);
                 for (var i = 0; i < _this.listeners.connection.length; i++) {
                     var listener = _this.listeners.connection[i];
                     listener(_this.socket.isConnected);
@@ -233,17 +227,20 @@
                 data[_i - 1] = arguments[_i];
             }
             return new Promise(function (resolve, reject) {
-                _this.socket.send({
+                _this.socket
+                    .send({
                     type: 'mutation',
                     store: _this.config.store,
                     session: _this.session,
                     data: {
-                        name: name, data: data
-                    }
-                }).then(function (message) {
-                    _this._mutate(message);
-                    if (message.message !== void 0) {
-                        resolve(message.message);
+                        name: name,
+                        data: data,
+                    },
+                })
+                    .then(function (response) {
+                    _this._mutate(response);
+                    if (response.message !== void 0) {
+                        resolve(response.message);
                     }
                     else {
                         resolve(undefined);
@@ -254,8 +251,8 @@
             });
         };
         Storex.prototype.subscribe = function (listener) {
-            if (typeof listener !== "function") {
-                throw new ErrorEvent("Listener has to be a function.");
+            if (typeof listener !== 'function') {
+                throw new ErrorEvent('Listener has to be a function.');
             }
             this.listeners.messages.push(listener);
             listener(this.state);
@@ -267,8 +264,8 @@
             };
         };
         Storex.prototype.connection = function (listener) {
-            if (typeof listener !== "function") {
-                throw new ErrorEvent("Listener has to be a function.");
+            if (typeof listener !== 'function') {
+                throw new ErrorEvent('Listener has to be a function.');
             }
             this.listeners.connection.push(listener);
             if (this.socket.isConnected) {
@@ -289,4 +286,4 @@
 
     return Storex;
 
-})));
+}));

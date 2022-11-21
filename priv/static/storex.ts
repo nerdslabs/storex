@@ -2,7 +2,7 @@ interface Response {
   type: string
   store: string
   session: string
-  data: any,
+  data: any
   message?: any
 }
 
@@ -14,17 +14,16 @@ interface Error {
 }
 
 class Diff {
-
   private static set(object: any, path: any[], value: any) {
-    let index = path.pop()
-    let parent = path.reduce((o, i) => o[i], object)
+    const index = path.pop()
+    const parent = path.reduce((o, i) => o[i], object)
 
     parent[index] = value
   }
 
   private static remove(object: any, path: any[]) {
-    let index = path.pop()
-    let parent = path.reduce((o, i) => o[i], object)
+    const index = path.pop()
+    const parent = path.reduce((o, i) => o[i], object)
 
     if (Array.isArray(parent)) {
       parent.splice(index, 1)
@@ -34,12 +33,12 @@ class Diff {
   }
 
   public static patch(source: any, changes: any[]) {
-    for (let change of changes) {
-      if (change.a === "u") {
+    for (const change of changes) {
+      if (change.a === 'u') {
         Diff.set(source, change.p, change.t)
-      } else if (change.a === "d") {
+      } else if (change.a === 'd') {
         Diff.remove(source, change.p)
-      } else if (change.a === "i") {
+      } else if (change.a === 'i') {
         Diff.set(source, change.p, change.t)
       }
     }
@@ -49,11 +48,11 @@ class Diff {
 }
 
 class Socket {
-  private socket: WebSocket
+  private socket: WebSocket | null = null
   private keeper: any
   private requests: { [key: string]: any }
 
-  private connections: any[] = []
+  private connectListeners: (() => void)[] = []
 
   public stores: { [key: string]: Storex<any> }
 
@@ -64,30 +63,26 @@ class Socket {
     this.stores = {}
   }
 
-  connect(): Promise<any> {
-    return new Promise((resolve, reject) => {
-      if (this.isConnected) {
-        resolve(true)
-      } else {
-        this.connections.push({ resolve, reject })
+  connect(): void {
+    if (this.isConnected === false && this.socket === null) {
+      const address = Storex.defaults.address || location.host + '/storex'
+      const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://'
 
-        if (this.socket === void 0) {
-          const address = Storex.defaults.address || location.host + '/storex'
-          const protocol = location.protocol === 'https:' ? 'wss://' : 'ws://'
+      this.socket = new WebSocket(protocol + address)
+      this.socket.binaryType = 'arraybuffer'
 
-          this.socket = new WebSocket(protocol + address)
-          this.socket.binaryType = 'arraybuffer'
+      this.socket.onopen = this.opened.bind(this)
+      this.socket.onclose = this.closed.bind(this)
+      this.socket.onmessage = this.message.bind(this)
+    }
+  }
 
-          this.socket.onopen = this.opened.bind(this)
-          this.socket.onclose = this.closed.bind(this)
-          this.socket.onmessage = this.message.bind(this)
-        }
-      }
-    })
+  onConnect(listener: () => void) {
+    this.connectListeners.push(listener)
   }
 
   get isConnected() {
-    return this.socket !== void 0 && this.socket.readyState === this.socket.OPEN
+    return this.socket !== void 0 && this.socket?.readyState === WebSocket.OPEN
   }
 
   send(data: any): Promise<Response> {
@@ -96,7 +91,7 @@ class Socket {
       const payload = data
       payload.request = request
 
-      this.socket.send(JSON.stringify(payload))
+      this.socket?.send(JSON.stringify(payload))
 
       this.requests[request] = [resolve, reject]
     })
@@ -108,13 +103,13 @@ class Socket {
     if (request !== void 0) {
       const [resolve, reject] = request
 
-      if(data.type === "error") {
+      if (data.type === 'error') {
         reject(data)
       } else {
         resolve(data)
       }
     } else {
-      if (data.type === "mutation") {
+      if (data.type === 'mutation') {
         const store = this.stores[data.store]
         if (store !== void 0) {
           store._mutate(data)
@@ -124,15 +119,12 @@ class Socket {
   }
 
   opened(event: Event) {
-    if (this.socket.readyState === this.socket.OPEN) {
-      while (this.connections.length > 0) {
-        const { resolve, _ } = this.connections.shift()
-        resolve()
-      }
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.connectListeners.forEach((listener) => listener())
 
       this.keeper = setInterval(() => {
         this.send({
-          type: 'ping'
+          type: 'ping',
         })
       }, 30000)
     } else {
@@ -141,23 +133,18 @@ class Socket {
   }
 
   closed(event: CloseEvent) {
-    while (this.connections.length > 0) {
-      const { _, reject } = this.connections.shift()
-      reject()
-    }
-
-    console.log(event)
+    this.socket = null
 
     const code = event.code
     const reason = event.reason
 
     if (code >= 4000) {
       console.error('[storex]', reason)
-    } else if (code === 1000) {
+    } else if ([1000, 1005, 1006].includes(code)) {
       this.connect()
     }
 
-    Object.values(this.stores).forEach(store => store._disconnected())
+    Object.values(this.stores).forEach((store) => store._disconnected())
 
     if (this.keeper !== null) {
       clearInterval(this.keeper)
@@ -170,7 +157,7 @@ const socket = new Socket()
 interface StoreConfig {
   session?: string
   store: string
-  params: {[key: string]: any}
+  params: { [key: string]: any }
   subscribe?: () => void
   connection?: () => void
 }
@@ -179,14 +166,17 @@ class Storex<T> {
   private session: string | null
   private config: any
   private socket: Socket
-  private listeners: { connection: ((state: boolean) => void)[], messages: ((state: T) => void)[]} = {
+  private listeners: {
+    connection: ((state: boolean) => void)[]
+    messages: ((state: T) => void)[]
+  } = {
     connection: [],
     messages: [],
   }
 
   public state: T
 
-  public static defaults: { params: { [key: string]: any }, address?: string } = {
+  public static defaults: { params: { [key: string]: any }; address?: string } = {
     params: {},
   }
 
@@ -200,8 +190,8 @@ class Storex<T> {
     }
 
     if (this.config.subscribe) {
-      if (typeof this.config.subscribe !== "function") {
-        throw new ErrorEvent("Listener has to be a function.")
+      if (typeof this.config.subscribe !== 'function') {
+        throw new ErrorEvent('Listener has to be a function.')
       }
 
       this.listeners.messages.push(this.config.subscribe)
@@ -211,25 +201,28 @@ class Storex<T> {
       this.listeners.connection.push(this.config.connection)
     }
 
-    this.socket.connect().then(this._connected.bind(this))
+    this.socket.onConnect(this._connected.bind(this))
+    this.socket.connect()
   }
 
   _connected() {
     this.socket.stores[this.config.store] = this
 
-    this.socket.send({
-      type: 'join',
-      store: this.config.store,
-      data: { ...Storex.defaults.params, ...this.config.params }
-    }).then((response: Response) => {
-      this.session = response.session
-      this._mutate(response)
+    this.socket
+      .send({
+        type: 'join',
+        store: this.config.store,
+        data: { ...Storex.defaults.params, ...this.config.params },
+      })
+      .then((response: Response) => {
+        this.session = response.session
+        this._mutate(response)
 
-      for (let i = 0; i < this.listeners.connection.length; i++) {
-        const listener = this.listeners.connection[i]
-        listener(this.socket.isConnected)
-      }
-    })
+        for (let i = 0; i < this.listeners.connection.length; i++) {
+          const listener = this.listeners.connection[i]
+          listener(this.socket.isConnected)
+        }
+      })
   }
 
   _disconnected() {
@@ -254,29 +247,35 @@ class Storex<T> {
 
   commit<T>(name: string, ...data: any): Promise<T | undefined> {
     return new Promise((resolve, reject) => {
-      this.socket.send({
-        type: 'mutation',
-        store: this.config.store,
-        session: this.session,
-        data: {
-          name, data
-        }
-      }).then((response: Response) => {
-        this._mutate(response)
-        if (response.message !== void 0) {
-          resolve(response.message)
-        } else {
-          resolve(undefined);
-        }
-      }, (error: Error) => {
-        reject(error.error)
-      })
+      this.socket
+        .send({
+          type: 'mutation',
+          store: this.config.store,
+          session: this.session,
+          data: {
+            name,
+            data,
+          },
+        })
+        .then(
+          (response: Response) => {
+            this._mutate(response)
+            if (response.message !== void 0) {
+              resolve(response.message)
+            } else {
+              resolve(undefined)
+            }
+          },
+          (error: Error) => {
+            reject(error.error)
+          },
+        )
     })
   }
 
   subscribe(listener: (state: T) => void): () => void {
-    if(typeof listener !== "function") {
-      throw new ErrorEvent("Listener has to be a function.")
+    if (typeof listener !== 'function') {
+      throw new ErrorEvent('Listener has to be a function.')
     }
 
     this.listeners.messages.push(listener)
@@ -284,20 +283,20 @@ class Storex<T> {
 
     return function unsubscribe() {
       const index = this?.listeners.messages.indexOf(listener)
-      if(index > -1) {
+      if (index > -1) {
         this.listeners.messages.splice(index, 1)
       }
     }
   }
 
   connection(listener: (state: boolean) => void): () => void {
-    if (typeof listener !== "function") {
-      throw new ErrorEvent("Listener has to be a function.")
+    if (typeof listener !== 'function') {
+      throw new ErrorEvent('Listener has to be a function.')
     }
 
     this.listeners.connection.push(listener)
-    
-    if(this.socket.isConnected) {
+
+    if (this.socket.isConnected) {
       listener(this.socket.isConnected)
     }
 
