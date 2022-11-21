@@ -44,10 +44,10 @@ defmodule Storex.MixProject do
     [
       {:cowboy, "~> 2.9"},
       {:nanoid, "~> 2.0"},
-      {:jason, "~> 1.0", optional: true},
+      {:jason, "~> 1.4", optional: true},
 
       # Docs
-      {:ex_doc, "~> 0.26", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.29", only: :dev, runtime: false},
       {:dialyxir, "~> 1.1.0", only: [:dev], runtime: false},
 
       # Tests

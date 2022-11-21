@@ -85,7 +85,12 @@
             }
         };
         Socket.prototype.onConnect = function (listener) {
-            this.connectListeners.push(listener);
+            if (this.isConnected) {
+                listener();
+            }
+            else {
+                this.connectListeners.push(listener);
+            }
         };
         Object.defineProperty(Socket.prototype, "isConnected", {
             get: function () {
