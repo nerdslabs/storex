@@ -80,9 +80,9 @@ class Socket {
   onConnect(listener: () => void) {
     if (this.isConnected) {
       listener()
-    } else {
-      this.connectListeners.push(listener)
-    }
+    } 
+    
+    this.connectListeners.push(listener)
   }
 
   get isConnected() {
