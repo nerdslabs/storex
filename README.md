@@ -16,7 +16,7 @@ Add **storex** to deps in `mix.exs`:
 
 ```elixir
 defp deps do
-  [{:storex, "~> 0.2.2"}]
+  [{:storex, "~> 0.2.3"}]
 end
 ```
 
