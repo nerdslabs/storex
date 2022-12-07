@@ -16,7 +16,7 @@ Add **storex** to deps in `mix.exs`:
 
 ```elixir
 defp deps do
-  [{:storex, "~> 0.2.3"}]
+  [{:storex, "~> 0.2.4"}]
 end
 ```
 
@@ -101,7 +101,7 @@ const store = new Storex({
   store: 'ExampleApp.Store.Counter',
   params: {},
   subscribe: (state) => {
-    const state = state
+    console.log(state)
   },
   connection: (state) => {
     console.log(state ? 'connected' : 'disconnected')
