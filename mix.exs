@@ -44,7 +44,7 @@ defmodule Storex.MixProject do
     [
       {:cowboy, "~> 2.9"},
       {:nanoid, "~> 2.0"},
-      {:jason, "~> 1.4", optional: true},
+      {:jason, "~> 1.4"},
 
       # Docs
       {:ex_doc, "~> 0.29", only: :dev, runtime: false},
