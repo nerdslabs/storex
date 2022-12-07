@@ -13,18 +13,18 @@ interface Error {
   error: string
 }
 
+interface Change {
+  a: "u" | "d" | "i",
+  p: any[],
+  t: unknown
+}
+
 class Diff {
   private static set(object: any, path: any[], value: any) {
-    if (path.length > 0) {
-      const index = path.pop()
-      const parent = path.reduce((o, i) => o[i], object)
-      
-      parent[index] = value
+    const index = path.pop()
+    const parent = path.reduce((o, i) => o[i], object)
 
-      return object
-    } else {
-      return value
-    }
+    parent[index] = value
   }
 
   private static remove(object: any, path: any[]) {
@@ -36,20 +36,24 @@ class Diff {
     } else {
       delete parent[index]
     }
-
-    return object
   }
 
-  public static patch(source: any, changes: any[]) {
+  public static patch(source: any, changes: Change[]) {
     for (const change of changes) {
       if (change.a === 'u') {
-        return Diff.set(source, change.p, change.t)
+        if (change.p.length > 0) {
+          Diff.set(source, change.p, change.t)
+        } else {
+          source = change.t
+        }
       } else if (change.a === 'd') {
-        return Diff.remove(source, change.p)
+        Diff.remove(source, change.p)
       } else if (change.a === 'i') {
-        return Diff.set(source, change.p, change.t)
+        Diff.set(source, change.p, change.t)
       }
     }
+
+    return source
   }
 }
 
