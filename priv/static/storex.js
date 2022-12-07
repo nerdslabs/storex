@@ -34,9 +34,15 @@
         function Diff() {
         }
         Diff.set = function (object, path, value) {
-            var index = path.pop();
-            var parent = path.reduce(function (o, i) { return o[i]; }, object);
-            parent[index] = value;
+            if (path.length > 0) {
+                var index = path.pop();
+                var parent = path.reduce(function (o, i) { return o[i]; }, object);
+                parent[index] = value;
+                return object;
+            }
+            else {
+                return value;
+            }
         };
         Diff.remove = function (object, path) {
             var index = path.pop();
@@ -47,21 +53,21 @@
             else {
                 delete parent[index];
             }
+            return object;
         };
         Diff.patch = function (source, changes) {
             for (var _i = 0, changes_1 = changes; _i < changes_1.length; _i++) {
                 var change = changes_1[_i];
                 if (change.a === 'u') {
-                    Diff.set(source, change.p, change.t);
+                    return Diff.set(source, change.p, change.t);
                 }
                 else if (change.a === 'd') {
-                    Diff.remove(source, change.p);
+                    return Diff.remove(source, change.p);
                 }
                 else if (change.a === 'i') {
-                    Diff.set(source, change.p, change.t);
+                    return Diff.set(source, change.p, change.t);
                 }
             }
-            return source;
         };
         return Diff;
     }());

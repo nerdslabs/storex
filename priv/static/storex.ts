@@ -15,10 +15,16 @@ interface Error {
 
 class Diff {
   private static set(object: any, path: any[], value: any) {
-    const index = path.pop()
-    const parent = path.reduce((o, i) => o[i], object)
+    if (path.length > 0) {
+      const index = path.pop()
+      const parent = path.reduce((o, i) => o[i], object)
+      
+      parent[index] = value
 
-    parent[index] = value
+      return object
+    } else {
+      return value
+    }
   }
 
   private static remove(object: any, path: any[]) {
@@ -30,20 +36,20 @@ class Diff {
     } else {
       delete parent[index]
     }
+
+    return object
   }
 
   public static patch(source: any, changes: any[]) {
     for (const change of changes) {
       if (change.a === 'u') {
-        Diff.set(source, change.p, change.t)
+        return Diff.set(source, change.p, change.t)
       } else if (change.a === 'd') {
-        Diff.remove(source, change.p)
+        return Diff.remove(source, change.p)
       } else if (change.a === 'i') {
-        Diff.set(source, change.p, change.t)
+        return Diff.set(source, change.p, change.t)
       }
     }
-
-    return source
   }
 }
 
