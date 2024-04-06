@@ -72,6 +72,13 @@ defmodule Storex.Diff do
     diff(source, changed, changes, path)
   end
 
+  defp compare_map(%Date{} = source, %Date{} = changed, changes, path) do
+    source = Date.to_string(source)
+    changed = Date.to_string(changed)
+
+    diff(source, changed, changes, path)
+  end
+
   defp compare_map(%{__struct__: _} = source, %{__struct__: _} = changed, changes, path) do
     source = Map.from_struct(source)
     changed = Map.from_struct(changed)

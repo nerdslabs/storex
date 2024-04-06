@@ -80,4 +80,12 @@ defmodule StorexTest.Diff do
                NaiveDateTime.from_iso8601!("2015-01-23 23:50:07")
              )
   end
+
+  test "diff Date" do
+    assert [%{a: "u", p: [], t: "2016-03-01"}] =
+             Storex.Diff.check(
+               Date.from_iso8601!("2015-01-23"),
+               Date.from_iso8601!("2016-03-01")
+             )
+  end
 end
