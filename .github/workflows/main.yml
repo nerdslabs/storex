@@ -28,6 +28,9 @@ jobs:
       with:
         otp-version: ${{matrix.otp}}
         elixir-version: ${{matrix.elixir}}
+    - name: Install packages
+      run: |
+        sudo apt-get install -y erlang-dev
     - name: Install Dependencies
       run: |
         mix local.rebar --force
