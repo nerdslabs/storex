@@ -37,8 +37,10 @@ defmodule StorexTest.Diff do
   end
 
   test "diff struct" do
-    assert [%{a: "u", p: [:name], t: "B"}, %{a: "u", p: [:age], t: 10}] =
-             Storex.Diff.check(%Struct{name: "A"}, %Struct{name: "B", age: 10})
+    diff = Storex.Diff.check(%Struct{name: "A"}, %Struct{name: "B", age: 10})
+
+    assert Enum.member?(diff, %{a: "u", p: [:name], t: "B"})
+    assert Enum.member?(diff, %{a: "u", p: [:age], t: 10})
   end
 
   test "diff DateTime" do
@@ -78,6 +80,14 @@ defmodule StorexTest.Diff do
              Storex.Diff.check(
                NaiveDateTime.from_iso8601!("2015-01-22 12:32:12"),
                NaiveDateTime.from_iso8601!("2015-01-23 23:50:07")
+             )
+  end
+
+  test "diff Date" do
+    assert [%{a: "u", p: [], t: "2016-03-01"}] =
+             Storex.Diff.check(
+               Date.from_iso8601!("2015-01-23"),
+               Date.from_iso8601!("2016-03-01")
              )
   end
 end

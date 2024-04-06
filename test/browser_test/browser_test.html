@@ -1,41 +1,64 @@
 <html lang="en">
+
 <head></head>
+
 <body>
-  <div class="connected"></div>
-  <div class="session"></div>
-  <div class="counter"></div>
-  <div class="reply"></div>
-  <button class="increase"></button>
-  <button class="decrease"></button>
+  <div>
+    <div class="counter-connected"></div>
+    <div class="session"></div>
+    <div class="counter-value"></div>
+    <div class="reply"></div>
+    <button class="increase"></button>
+    <button class="decrease"></button>
+  </div>
+  <div>
+    <input class="input-text" type="text">
+    <div class="text-value"></div>
+    <button class="text-send"></button>
+  </div>
 
   <script src="/static/storex.js"></script>
   <script>
-    const connected = document.querySelector('.connected')
+    const counterConnected = document.querySelector('.counter-connected')
     const session = document.querySelector('.session')
-    const counter = document.querySelector('.counter')
+    const counterValue = document.querySelector('.counter-value')
     const reply = document.querySelector('.reply')
 
-    const store = new storex({
+    const counterStore = new storex({
       store: "StorexTest.Store.Counter",
       params: {},
       subscribe: (state) => {
-        session.innerHTML = store.session
-        counter.innerHTML = state.counter
+        session.innerHTML = counterStore.session
+        counterValue.innerHTML = state.counter
       },
       connection(state) {
-        connected.innerHTML = state
+        counterConnected.innerHTML = state
       }
     })
 
-    document.querySelector('button.increase').addEventListener('click',  () => store.commit('increase'))
+    document.querySelector('button.increase').addEventListener('click', () => counterStore.commit('increase'))
 
     document.querySelector('button.decrease').addEventListener('click', () => {
-      store.commit('decrease').then(response => {
+      counterStore.commit('decrease').then(response => {
         if (response !== void 0) {
           reply.innerHTML = response
         }
       })
     })
+
+    const inputText = document.querySelector(".input-text")
+    const textValue = document.querySelector(".text-value")
+
+    const textStore = new storex({
+      store: "StorexTest.Store.Text",
+      params: {},
+      subscribe: (state) => {
+        textValue.innerHTML = state
+      },
+    })
+
+    document.querySelector('button.text-send').addEventListener('click', () => textStore.commit('change', inputText.value))
   </script>
 </body>
+
 </html>

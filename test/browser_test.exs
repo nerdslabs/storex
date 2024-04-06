@@ -1,6 +1,8 @@
 defmodule StorexTest.Browser do
   use ExUnit.Case
-  use Hound.Helpers
+  use Wallaby.DSL
+
+  import Wallaby.Query, only: [css: 1, css: 2]
 
   setup_all do
     dispatch =
@@ -21,71 +23,55 @@ defmodule StorexTest.Browser do
     :ok
   end
 
-  hound_session()
+  setup do
+    {:ok, session} = Wallaby.start_session()
 
-  test "test connected", _meta do
-    navigate_to("http://localhost:9999/")
-
-    :timer.sleep(500)
-
-    connected = find_element(:class, "connected")
-
-    assert inner_html(connected) == "true"
+    %{session: session}
   end
 
-  test "basic state", _meta do
-    navigate_to("http://localhost:9999/")
-
-    :timer.sleep(500)
-
-    counter = find_element(:class, "counter")
-
-    assert inner_html(counter) == "0"
+  test "test connected", %{session: session} do
+    session
+    |> visit("http://localhost:9999/")
+    |> assert_has(css(".counter-connected", text: "true"))
   end
 
-  test "increase state browser", _meta do
-    navigate_to("http://localhost:9999/")
-
-    :timer.sleep(500)
-
-    find_element(:class, "increase")
-    |> click()
-
-    :timer.sleep(500)
-
-    counter = find_element(:class, "counter")
-
-    assert inner_html(counter) == "1"
+  test "basic state", %{session: session} do
+    session
+    |> visit("http://localhost:9999/")
+    |> assert_has(css(".counter-value", text: "0"))
   end
 
-  test "increase state elixir", _meta do
-    navigate_to("http://localhost:9999/")
-
-    :timer.sleep(500)
-
-    session = find_element(:class, "session") |> inner_html()
-
-    Storex.mutate(session, "StorexTest.Store.Counter", "increase")
-
-    :timer.sleep(500)
-
-    counter = find_element(:class, "counter")
-
-    assert inner_html(counter) == "1"
+  test "increase state browser", %{session: session} do
+    session
+    |> visit("http://localhost:9999/")
+    |> click(css(".increase"))
+    |> assert_has(css(".counter-value", text: "1"))
   end
 
-  test "decrease state browser reply", _meta do
-    navigate_to("http://localhost:9999/")
+  test "increase state elixir", %{session: session} do
+    session = session
+    |> visit("http://localhost:9999/")
 
-    :timer.sleep(500)
+    session_id = session |> text(css(".session"))
 
-    find_element(:class, "decrease")
-    |> click()
+    Storex.mutate(session_id, "StorexTest.Store.Counter", "increase")
 
-    :timer.sleep(500)
+    session
+    |> assert_has(css(".counter-value", text: "1"))
+  end
 
-    reply = find_element(:class, "reply")
+  test "decrease state browser reply", %{session: session} do
+    session
+    |> visit("http://localhost:9999/")
+    |> click(css(".decrease"))
+    |> assert_has(css(".reply", text: "decreased"))
+  end
 
-    assert inner_html(reply) == "decreased"
+  test "set text state", %{session: session} do
+    session
+    |> visit("http://localhost:9999/")
+    |> fill_in(css(".input-text"), with: "John Doe")
+    |> click(css(".text-send"))
+    |> assert_has(css(".text-value", text: "John Doe"))
   end
 end

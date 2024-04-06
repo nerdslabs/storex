@@ -1,6 +1,8 @@
 name: Elixir CI
 
 on:
+  pull_request:
+    branches: [master]
   push:
     tags:
       - 0.*
@@ -8,25 +10,30 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    env:
+      MIX_ENV: test
     name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
     strategy:
       matrix:
-        otp: ['24', '25']
-        elixir: ['1.13', '1.14']
+        otp: ['24', '25', '26']
+        elixir: ['1.14', '1.15', '1.16']
     steps:
-    - uses: actions/checkout@v2  
-    - run: |
-        export DISPLAY=:99
-        chromedriver --url-base=/ &
-        sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & # optional
-    - run: |
-        sleep 20
+    - uses: actions/checkout@v4
     - uses: erlef/setup-beam@v1
       with:
         otp-version: ${{matrix.otp}}
         elixir-version: ${{matrix.elixir}}
+    - uses: actions/cache@v3
+      with:
+        path: deps
+        key: ${{ runner.os }}-${{matrix.otp}}-${{matrix.elixir}}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+        restore-keys: |
+          ${{ runner.os }}-${{matrix.otp}}-${{matrix.elixir}}-mix-
     - name: Install Dependencies
-      run: mix deps.get
+      run: |
+        mix local.rebar --force
+        mix local.hex --force
+        mix deps.get
     - name: Run Tests
       run: mix test
