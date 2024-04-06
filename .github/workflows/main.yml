@@ -1,6 +1,8 @@
 name: Elixir CI
 
 on:
+  pull_request:
+    branches: [master]
   push:
     tags:
       - 0.*
@@ -12,8 +14,8 @@ jobs:
     name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
     strategy:
       matrix:
-        otp: ['24', '25']
-        elixir: ['1.13', '1.14']
+        otp: ['24', '25', '26']
+        elixir: ['1.14', '1.15', '1.16']
     steps:
     - uses: actions/checkout@v2  
     - run: |
