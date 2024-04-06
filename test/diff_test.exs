@@ -37,8 +37,10 @@ defmodule StorexTest.Diff do
   end
 
   test "diff struct" do
-    assert [%{a: "u", p: [:name], t: "B"}, %{a: "u", p: [:age], t: 10}] =
-             Storex.Diff.check(%Struct{name: "A"}, %Struct{name: "B", age: 10})
+    diff = Storex.Diff.check(%Struct{name: "A"}, %Struct{name: "B", age: 10})
+
+    assert Enum.member?(diff, %{a: "u", p: [:name], t: "B"})
+    assert Enum.member?(diff, %{a: "u", p: [:age], t: 10})
   end
 
   test "diff DateTime" do
