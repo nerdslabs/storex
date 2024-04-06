@@ -10,14 +10,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
     strategy:
       matrix:
         otp: ['24', '25', '26']
         elixir: ['1.14', '1.15', '1.16']
     steps:
-    - uses: actions/checkout@v2  
+    - uses: actions/checkout@v4
     - run: |
         export DISPLAY=:99
         chromedriver --url-base=/ &
