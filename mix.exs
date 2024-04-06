@@ -51,6 +51,7 @@ defmodule Storex.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
 
       # Tests
+      {:ssl_verify_fun, "~> 1.1", manager: :rebar3, override: true},
       {:wallaby, "~> 0.30.0", runtime: false, only: :test}
     ]
   end
