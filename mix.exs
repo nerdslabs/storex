@@ -51,7 +51,7 @@ defmodule Storex.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
 
       # Tests
-      {:hound, "~> 1.1", only: [:test]}
+      {:wallaby, "~> 0.30.0", runtime: false, only: :test}
     ]
   end
 
