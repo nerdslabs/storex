@@ -48,7 +48,7 @@ defmodule Storex.MixProject do
 
       # Docs
       {:ex_doc, "~> 0.29", only: :dev, runtime: false},
-      {:dialyxir, "~> 1.1.0", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
 
       # Tests
       {:hound, "~> 1.1", only: [:test]}
