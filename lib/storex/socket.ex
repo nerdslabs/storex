@@ -13,11 +13,11 @@ defmodule Storex.Socket do
       Map.put(message, :type, "pong")
       |> Jason.encode!()
 
-    {:reply, {:text, message}, state}
+    {:text, message, state}
   end
 
   def message_handle(%{store: nil}, state) do
-    {:reply, {:close, 4000, "Store is not set."}, state}
+    {:close, 4000, "Store is not set.", state}
   end
 
   def message_handle(%{type: "join"} = message, state) do
@@ -35,11 +35,10 @@ defmodule Storex.Socket do
           |> Map.put(:session, state.session)
           |> Jason.encode!()
 
-        {:reply, {:text, message}, state}
+        {:text, message, state}
 
       _ ->
-        {:reply, {:close, 4001, "Store '#{message.store}' is not defined or can't be compiled."},
-         state}
+        {:close, 4001, "Store '#{message.store}' is not defined or can't be compiled.", state}
     end
   end
 
@@ -80,7 +79,7 @@ defmodule Storex.Socket do
         }
     end
     |> Jason.encode!()
-    |> (&{:reply, {:text, &1}, state}).()
+    |> (&{:text, &1, state}).()
   end
 
   defp safe_concat(store) do

@@ -16,9 +16,8 @@ defmodule Storex do
   @doc """
   Mutate store from elixir.
 
+  Call mutation callback in store synchronously:
   ```elixir
-  Call mutation callback in store synchronously.
-
   Storex.mutate("d9ez7fgkp96", "ExampleApp.Store", "reload", ["user_id"])
   ```
   """

@@ -1,0 +1,42 @@
+# storex
+
+## 0.3.0
+
+- **[BREAKING]** Rename Cowbow handler module from `Storex.Socket.Handler` to `Storex.Handler.Cowboy`
+- Add support for Plug based apps `plug Storex.Plug`
+
+## 0.2.5
+
+- Fix diff of Date struct
+- Rewrite tests from Hound to Wallaby
+
+## 0.2.4
+
+- Fix root state update
+- Remove optional from jason dependency
+
+## 0.2.3
+
+- Fix reconnect of WebSocket on connection close
+
+## 0.2.2
+
+- Fix reconnect of WebSocket on connection close
+
+## 0.2.1
+
+- Typescript/Javascript improvements
+
+## 0.2.0
+
+- Dynamic registry declaration
+- - Default registry on ETS
+- Fix issue with a restart of Store when stopped on disconnect
+- Update dependencies
+
+
+## 0.1.0
+
+- The only diff of the store state is being sent on each mutation.
+- Subscriber of connection status
+- Fixes in library
