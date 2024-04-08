@@ -3,7 +3,7 @@ defmodule Storex.Supervisor do
 
   use DynamicSupervisor
 
-  def start_link() do
+  def start_link(_) do
     DynamicSupervisor.start_link(__MODULE__, [], name: __MODULE__)
   end
 

@@ -6,8 +6,8 @@ defmodule Storex do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Storex.Registry.ETS, []),
-      supervisor(Storex.Supervisor, [])
+      {Storex.Registry.ETS, []},
+      {Storex.Supervisor, []}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: __MODULE__)

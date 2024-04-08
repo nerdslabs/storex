@@ -4,6 +4,7 @@
 
 - **[BREAKING]** Rename Cowbow handler module from `Storex.Socket.Handler` to `Storex.Handler.Cowboy`
 - Add support for Plug based apps `plug Storex.Plug`
+- Update Storex application supervisor children spec
 
 ## 0.2.5
 
@@ -33,7 +34,6 @@
 - - Default registry on ETS
 - Fix issue with a restart of Store when stopped on disconnect
 - Update dependencies
-
 
 ## 0.1.0
 
