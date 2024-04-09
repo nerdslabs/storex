@@ -1,17 +1,26 @@
-defmodule StorexTest.Plug do
+defmodule StorexTest.Browser.Cowboy do
   use ExUnit.Case
   use Wallaby.DSL
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
-  @port 9998
+  @port 9999
 
   setup_all do
-    Supervisor.start_link(
-      [{Plug.Cowboy, scheme: :http, plug: StorexTest.Browser.Plug, port: @port}],
-      strategy: :one_for_one,
-      name: StorexTest.Supervisor
-    )
+    dispatch =
+      :cowboy_router.compile([
+        {:_,
+         [
+           {"/static/[...]", :cowboy_static, {:dir, "priv/static"}},
+           {"/storex", Storex.Handler.Cowboy, []},
+           {:_, MyApp.Browser.Handler, []}
+         ]}
+      ])
+
+    {:ok, _} =
+      :cowboy.start_clear(:test_http, [{:port, @port}], %{
+        :env => %{dispatch: dispatch}
+      })
 
     :ok
   end

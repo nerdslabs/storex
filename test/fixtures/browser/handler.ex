@@ -1,6 +1,6 @@
-defmodule StorexTest.Browser.Handler do
+defmodule MyApp.Browser.Handler do
   def init(request, state) do
-    {:ok, file} = File.read("./test/browser_test/browser_test.html")
+    {:ok, file} = File.read("./test/fixtures/browser/browser_test.html")
 
     request =
       :cowboy_req.reply(

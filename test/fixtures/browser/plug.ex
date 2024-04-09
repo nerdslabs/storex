@@ -1,4 +1,4 @@
-defmodule StorexTest.Browser.Plug do
+defmodule MyApp.Browser.Plug do
   use Plug.Router
 
   plug(Plug.Static,
@@ -12,7 +12,7 @@ defmodule StorexTest.Browser.Plug do
   plug(:dispatch)
 
   get "/" do
-    {:ok, file} = File.read("./test/browser_test/browser_test.html")
+    {:ok, file} = File.read("./test/fixtures/browser/browser_test.html")
 
     send_resp(conn, 200, file)
   end

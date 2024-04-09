@@ -1,13 +1,17 @@
-defmodule StorexTest.Bandit do
+defmodule StorexTest.Browser.Plug do
   use ExUnit.Case
   use Wallaby.DSL
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
-  @port 9997
+  @port 9998
 
   setup_all do
-    Bandit.start_link(plug: StorexTest.Browser.Plug, port: @port, startup_log: false)
+    Supervisor.start_link(
+      [{Plug.Cowboy, scheme: :http, plug: MyApp.Browser.Plug, port: @port}],
+      strategy: :one_for_one,
+      name: StorexTest.Supervisor
+    )
 
     :ok
   end
