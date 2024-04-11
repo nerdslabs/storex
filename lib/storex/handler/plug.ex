@@ -62,6 +62,6 @@ defmodule Storex.Handler.Plug do
   end
 
   defp map_response({:close, code, message, state}) do
-    {:stop, message, code, state}
+    {:stop, :normal, {code, message}, state}
   end
 end
