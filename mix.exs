@@ -22,7 +22,7 @@ defmodule Storex.MixProject do
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib", "test/fixtures", "test/storex"]
+  defp elixirc_paths(:test), do: ["lib", "test/fixtures", "test/storex", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   def application do
