@@ -1,24 +1,17 @@
-defmodule StorexTest.Browser do
+defmodule StorexTest.Browser.Plug do
   use ExUnit.Case
   use Wallaby.DSL
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
-  setup_all do
-    dispatch =
-      :cowboy_router.compile([
-        {:_,
-         [
-           {"/static/[...]", :cowboy_static, {:dir, "priv/static"}},
-           {"/storex", Storex.Socket.Handler, []},
-           {:_, StorexTest.Browser.Handler, []}
-         ]}
-      ])
+  @port 9998
 
-    {:ok, _} =
-      :cowboy.start_clear(:test_http, [{:port, 9999}], %{
-        :env => %{dispatch: dispatch}
-      })
+  setup_all do
+    Supervisor.start_link(
+      [{Plug.Cowboy, scheme: :http, plug: MyApp.Browser.Plug, port: @port}],
+      strategy: :one_for_one,
+      name: StorexTest.Supervisor
+    )
 
     :ok
   end
@@ -31,26 +24,27 @@ defmodule StorexTest.Browser do
 
   test "test connected", %{session: session} do
     session
-    |> visit("http://localhost:9999/")
+    |> visit("http://localhost:#{@port}/")
     |> assert_has(css(".counter-connected", text: "true"))
   end
 
   test "basic state", %{session: session} do
     session
-    |> visit("http://localhost:9999/")
+    |> visit("http://localhost:#{@port}/")
     |> assert_has(css(".counter-value", text: "0"))
   end
 
   test "increase state browser", %{session: session} do
     session
-    |> visit("http://localhost:9999/")
+    |> visit("http://localhost:#{@port}/")
     |> click(css(".increase"))
     |> assert_has(css(".counter-value", text: "1"))
   end
 
   test "increase state elixir", %{session: session} do
-    session = session
-    |> visit("http://localhost:9999/")
+    session =
+      session
+      |> visit("http://localhost:#{@port}/")
 
     session_id = session |> text(css(".session"))
 
@@ -62,14 +56,14 @@ defmodule StorexTest.Browser do
 
   test "decrease state browser reply", %{session: session} do
     session
-    |> visit("http://localhost:9999/")
+    |> visit("http://localhost:#{@port}/")
     |> click(css(".decrease"))
     |> assert_has(css(".reply", text: "decreased"))
   end
 
   test "set text state", %{session: session} do
     session
-    |> visit("http://localhost:9999/")
+    |> visit("http://localhost:#{@port}/")
     |> fill_in(css(".input-text"), with: "John Doe")
     |> click(css(".text-send"))
     |> assert_has(css(".text-value", text: "John Doe"))

@@ -1,7 +1,5 @@
-defmodule Storex.Socket.Handler do
+defmodule Storex.Handler.Cowboy do
   @moduledoc false
-
-  @behaviour :cowboy_websocket
 
   alias Storex.Socket
 
@@ -36,6 +34,7 @@ defmodule Storex.Socket.Handler do
     try do
       :erlang.binary_to_term(frame)
       |> Socket.message_handle(state)
+      |> map_response()
     rescue
       ArgumentError -> {:reply, {:close, 1007, "Payload is malformed."}, state}
     end
@@ -46,6 +45,7 @@ defmodule Storex.Socket.Handler do
     |> case do
       {:ok, message} ->
         Socket.message_handle(message, state)
+        |> map_response()
 
       {:error, _} ->
         {:reply, {:close, 1007, "Payload is malformed."}, state}
@@ -63,9 +63,18 @@ defmodule Storex.Socket.Handler do
       }
     }
     |> Socket.message_handle(state)
+    |> map_response()
   end
 
   def websocket_info(_info, state) do
     {:ok, state}
+  end
+
+  defp map_response({:text, message, state}) do
+    {:reply, {:text, message}, state}
+  end
+
+  defp map_response({:close, code, message, state}) do
+    {:reply, {:close, code, message}, state}
   end
 end

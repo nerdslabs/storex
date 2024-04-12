@@ -22,7 +22,7 @@ defmodule Storex.MixProject do
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib", "test/browser_test", "test/stores"]
+  defp elixirc_paths(:test), do: ["lib", "test/fixtures", "test/storex", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   def application do
@@ -42,7 +42,8 @@ defmodule Storex.MixProject do
 
   defp deps do
     [
-      {:cowboy, "~> 2.9"},
+      {:websock_adapter, "~> 0.5.6"},
+      {:plug, "~> 1.15"},
       {:nanoid, "~> 2.0"},
       {:jason, "~> 1.4"},
 
@@ -51,8 +52,11 @@ defmodule Storex.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
 
       # Tests
-      {:ssl_verify_fun, "~> 1.1", manager: :rebar3, override: true},
-      {:wallaby, "~> 0.30.0", runtime: false, only: :test}
+      {:ssl_verify_fun, "~> 1.1", only: :test, manager: :rebar3, override: true},
+      {:wallaby, "~> 0.30.0", runtime: false, only: :test},
+      {:cowboy, "~> 2.9", only: :test},
+      {:bandit, "~> 1.4", only: :test},
+      {:plug_cowboy, "~> 2.0", only: :test}
     ]
   end
 

@@ -20,40 +20,44 @@ interface Change {
 }
 
 class Diff {
-  private static set(object: any, path: any[], value: any) {
-    const index = path.pop()
-    const parent = path.reduce((o, i) => o[i], object)
+  private static set<T>(object: T, path: any[], value: unknown): T {
+    if (path.length > 0) {
+      const index = path.pop();
+      const parent = path.reduce((o, i) => o[i], object);
 
-    parent[index] = value
-  }
+      parent[index] = value;
 
-  private static remove(object: any, path: any[]) {
-    const index = path.pop()
-    const parent = path.reduce((o, i) => o[i], object)
-
-    if (Array.isArray(parent)) {
-      parent.splice(index, 1)
+      return object
     } else {
-      delete parent[index]
+	    return value as T
     }
   }
 
-  public static patch(source: any, changes: Change[]) {
+  private static remove<T>(object: T, path: any[]): T {
+    const index = path.pop();
+    const parent = path.reduce((o, i) => o[i], object);
+
+    if (Array.isArray(parent)) {
+      parent.splice(index, 1);
+    } else {
+      delete parent[index];
+    }
+    
+    return object
+  }
+
+  public static patch<T>(source: T, changes: Change[]): T {  
     for (const change of changes) {
-      if (change.a === 'u') {
-        if (change.p.length > 0) {
-          Diff.set(source, change.p, change.t)
-        } else {
-          source = change.t
-        }
-      } else if (change.a === 'd') {
-        Diff.remove(source, change.p)
-      } else if (change.a === 'i') {
-        Diff.set(source, change.p, change.t)
+      if (change.a === "u") {
+        source = Diff.set<T>(source, change.p, change.t)
+      } else if (change.a === "d") {
+        source = Diff.remove<T>(source, change.p)
+      } else if (change.a === "i") {
+        source = Diff.set<T>(source, change.p, change.t)
       }
     }
 
-    return source
+    return source;
   }
 }
 
@@ -248,7 +252,7 @@ class Storex<T> {
 
   _mutate(message: any) {
     if (message.diff !== void 0) {
-      this.state = Diff.patch(this.state, message.diff)
+      this.state = Diff.patch<T>(this.state, message.diff)
     } else {
       this.state = message.data
     }

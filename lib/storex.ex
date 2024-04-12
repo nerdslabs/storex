@@ -6,8 +6,8 @@ defmodule Storex do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(Storex.Registry.ETS, []),
-      supervisor(Storex.Supervisor, [])
+      {Storex.Registry.ETS, []},
+      {Storex.Supervisor, []}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: __MODULE__)
@@ -16,9 +16,8 @@ defmodule Storex do
   @doc """
   Mutate store from elixir.
 
+  Call mutation callback in store synchronously:
   ```elixir
-  Call mutation callback in store synchronously.
-
   Storex.mutate("d9ez7fgkp96", "ExampleApp.Store", "reload", ["user_id"])
   ```
   """

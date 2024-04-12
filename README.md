@@ -16,7 +16,7 @@ Add **storex** to deps in `mix.exs`:
 
 ```elixir
 defp deps do
-  [{:storex, "~> 0.2.5"}]
+  [{:storex, "~> 0.3.0"}]
 end
 ```
 
@@ -30,33 +30,28 @@ Also you need to add **storex** to `package.json` dependencies:
 
 ### Add storex websocket handler
 
-You need to add handler `Storex.Socket.Handler` to cowboy dispatch.
+You need to add handler `Storex.Handler.Plug` or `Storex.Handler.Cowboy`.
 
 **Phoenix:**
-Example based on [Phoenix guides](https://hexdocs.pm/phoenix/Phoenix.Endpoint.Cowboy2Adapter.html)
-
 ```elixir
-config :exampleapp, ExampleApp.Endpoint,
-  http: [
-    dispatch: [
-      {:_,
-       [
-         {"/storex", Storex.Socket.Handler, []},
-         {:_, Phoenix.Endpoint.Cowboy2Handler, {ExampleApp.Endpoint, []}}
-       ]}
-    ]
-  ]
+defmodule YourAppWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :your_app
+
+  plug Storex.Plug, path: "/storex"
+
+  # ...
+end
 ```
 
 **Cowboy:**
 ```elixir
 :cowboy_router.compile([
-    {:_, [
-      # ...
-      {"/storex", Storex.Socket.Handler, []},
-      # ...
-    ]}
-  ])
+  {:_, [
+    # ...
+    {"/storex", Storex.Socket.Handler, []},
+    # ...
+  ]}
+])
 ```
 
 ### Create store
