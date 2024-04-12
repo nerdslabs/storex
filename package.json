@@ -1,12 +1,8 @@
 {
   "name": "storex",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "main": "priv/static/storex.js",
   "types": "priv/static/storex.d.ts",
   "author": "NERDSLABS <office@nerdslabs.co>",
-  "license": "Apache-2.0",
-  "scripts": {
-    "build": "",
-    "watch": ""
-  }
+  "license": "Apache-2.0"
 }
