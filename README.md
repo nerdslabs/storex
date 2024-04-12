@@ -48,7 +48,7 @@ end
 :cowboy_router.compile([
   {:_, [
     # ...
-    {"/storex", Storex.Socket.Handler, []},
+    {"/storex", Storex.Handler.Cowboy, []},
     # ...
   ]}
 ])
