@@ -12,7 +12,7 @@ defmodule Storex.Handler.Plug do
     {:ok, %{session: session, pid: pid}}
   end
 
-  def terminate(_reason, _req, %{session: session}) do
+  def terminate(_reason, %{session: session}) do
     Storex.Registry.session_stores(session)
     |> Enum.each(fn {session, store, _} ->
       Storex.Supervisor.remove_store(session, store)
