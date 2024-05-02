@@ -1,26 +1,30 @@
-defmodule StorexTest.Handler.Cowboy do
+defmodule StorexTest.Handler.Plug do
   use ExUnit.Case, async: false
 
   import StorexTest.HandlerHelpers
 
   setup_all do
-    dispatch =
-      :cowboy_router.compile([
-        {:_,
-         [
-           {"/storex", Storex.Handler.Cowboy, []}
-         ]}
-      ])
-
-    {:ok, _} = :cowboy.start_clear(__MODULE__.HTTP, [{:port, 0}], %{env: %{dispatch: dispatch}})
-
+    {:ok, _} = Plug.Cowboy.http(__MODULE__, [], port: 0, protocol_options: [idle_timeout: 1000])
+    on_exit(fn -> :ok = Plug.Cowboy.shutdown(__MODULE__.HTTP) end)
     {:ok, port: :ranch.get_port(__MODULE__.HTTP)}
+  end
+
+  @behaviour Plug
+
+  @impl Plug
+  def init(arg), do: arg
+
+  @impl Plug
+  def call(conn, _opts) do
+    conn = Plug.Conn.fetch_query_params(conn)
+    websock = conn.query_params["websock"] |> String.to_atom()
+    WebSockAdapter.upgrade(conn, websock, [], timeout: 1000)
   end
 
   describe "init" do
     test "success", context do
       client = tcp_client(context)
-      http1_handshake(client)
+      http1_handshake(client, Storex.Handler.Plug)
 
       send_text_frame(client, """
       {
@@ -38,7 +42,7 @@ defmodule StorexTest.Handler.Cowboy do
 
     test "error", context do
       client = tcp_client(context)
-      http1_handshake(client)
+      http1_handshake(client, Storex.Handler.Plug)
 
       send_text_frame(client, """
       {
@@ -48,12 +52,14 @@ defmodule StorexTest.Handler.Cowboy do
       }
       """)
 
-      assert recv_connection_close_frame(client) == {:ok, <<4002::16, "Unauthorized"::binary>>}
+      {:ok, result} = recv_text_frame(client)
+
+      assert %{error: "Unauthorized", type: "error"} = Jason.decode!(result, keys: :atoms)
     end
 
     test "not existing store", context do
       client = tcp_client(context)
-      http1_handshake(client)
+      http1_handshake(client, Storex.Handler.Plug)
 
       send_text_frame(client, """
       {
@@ -71,7 +77,7 @@ defmodule StorexTest.Handler.Cowboy do
 
     test "without store", context do
       client = tcp_client(context)
-      http1_handshake(client)
+      http1_handshake(client, Storex.Handler.Plug)
 
       send_text_frame(client, """
       {
@@ -89,7 +95,7 @@ defmodule StorexTest.Handler.Cowboy do
   describe "mutate" do
     test "success", context do
       client = tcp_client(context)
-      http1_handshake(client)
+      http1_handshake(client, Storex.Handler.Plug)
 
       send_text_frame(client, """
       {
@@ -127,7 +133,7 @@ defmodule StorexTest.Handler.Cowboy do
 
     test "not existing mutation", context do
       client = tcp_client(context)
-      http1_handshake(client)
+      http1_handshake(client, Storex.Handler.Plug)
 
       send_text_frame(client, """
       {
@@ -172,10 +178,12 @@ defmodule StorexTest.Handler.Cowboy do
     socket
   end
 
-  def http1_handshake(client) do
+  def http1_handshake(client, module, params \\ []) do
+    params = params |> Keyword.put(:websock, module)
+
     :gen_tcp.send(client, """
-    GET /storex HTTP/1.1\r
-    Host: localhost\r
+    GET /?#{URI.encode_query(params)} HTTP/1.1\r
+    Host: server.example.com\r
     Upgrade: websocket\r
     Connection: Upgrade\r
     Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r
@@ -183,12 +191,13 @@ defmodule StorexTest.Handler.Cowboy do
     \r
     """)
 
-    {:ok, response} = :gen_tcp.recv(client, 0, 6000)
+    {:ok, response} = :gen_tcp.recv(client, 234)
 
     [
       "HTTP/1.1 101 Switching Protocols",
+      "cache-control: max-age=0, private, must-revalidate",
       "connection: Upgrade",
-      "date: " <> _,
+      "date: " <> _date,
       "sec-websocket-accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=",
       "server: Cowboy",
       "upgrade: websocket",

@@ -31,7 +31,7 @@ defmodule Storex do
 
   Invoke mutation callback globally across specified store asynchronously:
   ```elixir
-  Storex.mutate("ExampleApp.Store", "reload", ["params])
+  Storex.mutate("ExampleApp.Store", "reload", ["params"])
   ```
   """
   def mutate(store, mutation, payload) do
