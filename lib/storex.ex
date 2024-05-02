@@ -5,28 +5,48 @@ defmodule Storex do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
-    children = [
-      {Storex.Registry.ETS, []},
-      {Storex.Supervisor, []}
-    ]
+    children =
+      pg_children() ++
+        [
+          {Storex.PG, []},
+          {Storex.Registry, []},
+          {Storex.Supervisor, []}
+        ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: __MODULE__)
+  end
+
+  if Code.ensure_loaded?(:pg) do
+    defp pg_children() do
+      [%{id: :pg, start: {:pg, :start_link, [Storex.PG]}}]
+    end
+  else
+    defp pg_children() do
+      []
+    end
   end
 
   @doc """
   Mutate store from elixir.
 
-  Call mutation callback in store synchronously:
+  Invoke mutation callback globally across specified store asynchronously:
   ```elixir
-  Storex.mutate("d9ez7fgkp96", "ExampleApp.Store", "reload", ["user_id"])
+  Storex.mutate("ExampleApp.Store", "reload", ["params])
   ```
   """
-  def mutate(session, store, mutation, payload \\ [])
-      when is_binary(session) and is_binary(store) do
-    Storex.Registry.session_pid(session)
-    |> case do
-      :undefined -> {:error, "Session #{session} not found."}
-      pid -> Kernel.send(pid, {:mutate, store, mutation, payload})
-    end
+  def mutate(store, mutation, payload) do
+    Storex.PG.broadcast({:mutate, store, mutation, payload})
+  end
+
+  @doc """
+  Mutate store from elixir.
+
+  Invoke mutation callback by specified key and store asynchronously:
+  ```elixir
+  Storex.mutate("user_id", "ExampleApp.Store", "reload", ["params"])
+  ```
+  """
+  def mutate(key, store, mutation, payload) do
+    Storex.PG.broadcast({:mutate, key, store, mutation, payload})
   end
 end

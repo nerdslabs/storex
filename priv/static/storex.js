@@ -18,6 +18,8 @@
     OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
     PERFORMANCE OF THIS SOFTWARE.
     ***************************************************************************** */
+    /* global Reflect, Promise, SuppressedError, Symbol */
+
 
     var __assign = function() {
         __assign = Object.assign || function __assign(t) {
@@ -28,6 +30,11 @@
             return t;
         };
         return __assign.apply(this, arguments);
+    };
+
+    typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+        var e = new Error(message);
+        return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
     };
 
     var Diff = /** @class */ (function () {
@@ -58,13 +65,13 @@
         Diff.patch = function (source, changes) {
             for (var _i = 0, changes_1 = changes; _i < changes_1.length; _i++) {
                 var change = changes_1[_i];
-                if (change.a === "u") {
+                if (change.a === 'u') {
                     source = Diff.set(source, change.p, change.t);
                 }
-                else if (change.a === "d") {
+                else if (change.a === 'd') {
                     source = Diff.remove(source, change.p);
                 }
-                else if (change.a === "i") {
+                else if (change.a === 'i') {
                     source = Diff.set(source, change.p, change.t);
                 }
             }
@@ -105,11 +112,21 @@
             enumerable: false,
             configurable: true
         });
+        Socket.prototype._generateRequestId = function () {
+            var minCharCode = 48;
+            var maxCharCode = 122;
+            var randomString = '';
+            for (var i = 0; i < 10; i++) {
+                var randomCharCode = Math.floor(Math.random() * (maxCharCode - minCharCode + 1)) + minCharCode;
+                randomString += String.fromCharCode(randomCharCode);
+            }
+            return randomString;
+        };
         Socket.prototype.send = function (data) {
             var _this = this;
             return new Promise(function (resolve, reject) {
                 var _a;
-                var request = Math.random().toString(36).substr(2, 5);
+                var request = _this._generateRequestId();
                 var payload = data;
                 payload.request = request;
                 (_a = _this.socket) === null || _a === void 0 ? void 0 : _a.send(JSON.stringify(payload));
@@ -162,7 +179,7 @@
             else if ([1000, 1005, 1006].includes(code)) {
                 this.connect();
             }
-            Object.values(this.stores).forEach(function (store) { return store._disconnected(); });
+            Object.values(this.stores).forEach(function (store) { return store._disconnected(event); });
             if (this.keeper !== null) {
                 clearInterval(this.keeper);
             }
@@ -173,7 +190,6 @@
     var Storex = /** @class */ (function () {
         function Storex(config) {
             this.listeners = {
-                connection: [],
                 messages: [],
             };
             this.session = config.session || null;
@@ -187,9 +203,6 @@
                     throw new ErrorEvent('Listener has to be a function.');
                 }
                 this.listeners.messages.push(this.config.subscribe);
-            }
-            if (this.config.connection) {
-                this.listeners.connection.push(this.config.connection);
             }
             this.socket.onConnect(this._connected.bind(this));
             this.socket.connect();
@@ -206,17 +219,17 @@
                 .then(function (response) {
                 _this.session = response.session;
                 _this._mutate(response);
-                for (var i = 0; i < _this.listeners.connection.length; i++) {
-                    var listener = _this.listeners.connection[i];
-                    listener(_this.socket.isConnected);
+                if (typeof _this.config.onConnected == 'function') {
+                    _this.config.onConnected();
+                }
+            }, function (error) {
+                if (typeof _this.config.onError == 'function') {
+                    _this.config.onError(error.error);
                 }
             });
         };
-        Storex.prototype._disconnected = function () {
-            for (var i = 0; i < this.listeners.connection.length; i++) {
-                var listener = this.listeners.connection[i];
-                listener(this.socket.isConnected);
-            }
+        Storex.prototype._disconnected = function (event) {
+            this.config.onDisconnected(event);
         };
         Storex.prototype._mutate = function (message) {
             if (message.diff !== void 0) {
@@ -270,21 +283,6 @@
                 var index = this === null || this === void 0 ? void 0 : this.listeners.messages.indexOf(listener);
                 if (index > -1) {
                     this.listeners.messages.splice(index, 1);
-                }
-            };
-        };
-        Storex.prototype.connection = function (listener) {
-            if (typeof listener !== 'function') {
-                throw new ErrorEvent('Listener has to be a function.');
-            }
-            this.listeners.connection.push(listener);
-            if (this.socket.isConnected) {
-                listener(this.socket.isConnected);
-            }
-            return function unsubscribe() {
-                var index = this.listeners.connection.indexOf(listener);
-                if (index > -1) {
-                    this.listeners.connection.splice(index, 1);
                 }
             };
         };

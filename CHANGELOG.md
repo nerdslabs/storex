@@ -1,5 +1,15 @@
 # storex
 
+## 0.4.0
+
+- **[BREAKING]** `Storex.mutate/3` is no longer based on `session_id`
+- **[BREAKING]** `Store.init/2` callback now need to return `{:ok, state} | {:ok, state, key} | {:error, reason}`
+- **[BREAKING]** Remove custom `Registry` logic
+- **[BREAKING]** Remove `connection` callback from javascript client
+- New registry mechanism provides distributed mutations across the cluster
+- Fix `terminate` callback in `Storex.Handler.Plug`
+- Added three callbacks to frontend client `onConnected`, `onError` and `onDisconnected`
+
 ## 0.3.0
 
 - **[BREAKING]** Rename Cowbow handler module from `Storex.Socket.Handler` to `Storex.Handler.Cowboy`

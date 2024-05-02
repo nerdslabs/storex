@@ -21,21 +21,29 @@ defmodule Storex.Socket do
   end
 
   def message_handle(%{type: "join"} = message, state) do
-    get_store_module(message.store)
-    |> case do
-      {:ok, _} ->
-        if Storex.Supervisor.has_store(state.session, message.store) == false do
-          Storex.Supervisor.add_store(state.session, message.store, message.data)
-        end
+    with {:get_module, {:ok, _}} <- {:get_module, get_store_module(message.store)},
+         {:add_store, {:ok, _}} <-
+           {:add_store,
+            Storex.Supervisor.add_store(message.store, state.session, state.pid, message.data)} do
+      store_state = Storex.Supervisor.get_store_state(state.session, message.store)
 
-        store_state = Storex.Supervisor.get_store_state(state.session, message.store)
+      message =
+        Map.put(message, :data, store_state)
+        |> Map.put(:session, state.session)
+        |> Jason.encode!()
 
-        message =
-          Map.put(message, :data, store_state)
-          |> Map.put(:session, state.session)
-          |> Jason.encode!()
-
-        {:text, message, state}
+      {:text, message, state}
+    else
+      {:add_store, {:error, error_message}} ->
+         %{
+           type: "error",
+           session: state.session,
+           store: message.store,
+           error: error_message,
+           request: Map.get(message, :request, nil)
+         }
+         |> Jason.encode!()
+         |> (&{:text, &1, state}).()
 
       _ ->
         {:close, 4001, "Store '#{message.store}' is not defined or can't be compiled.", state}

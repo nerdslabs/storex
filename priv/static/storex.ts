@@ -14,50 +14,50 @@ interface Error {
 }
 
 interface Change {
-  a: "u" | "d" | "i",
-  p: any[],
+  a: 'u' | 'd' | 'i'
+  p: any[]
   t: unknown
 }
 
 class Diff {
   private static set<T>(object: T, path: any[], value: unknown): T {
     if (path.length > 0) {
-      const index = path.pop();
-      const parent = path.reduce((o, i) => o[i], object);
+      const index = path.pop()
+      const parent = path.reduce((o, i) => o[i], object)
 
-      parent[index] = value;
+      parent[index] = value
 
       return object
     } else {
-	    return value as T
+      return value as T
     }
   }
 
   private static remove<T>(object: T, path: any[]): T {
-    const index = path.pop();
-    const parent = path.reduce((o, i) => o[i], object);
+    const index = path.pop()
+    const parent = path.reduce((o, i) => o[i], object)
 
     if (Array.isArray(parent)) {
-      parent.splice(index, 1);
+      parent.splice(index, 1)
     } else {
-      delete parent[index];
+      delete parent[index]
     }
-    
+
     return object
   }
 
-  public static patch<T>(source: T, changes: Change[]): T {  
+  public static patch<T>(source: T, changes: Change[]): T {
     for (const change of changes) {
-      if (change.a === "u") {
+      if (change.a === 'u') {
         source = Diff.set<T>(source, change.p, change.t)
-      } else if (change.a === "d") {
+      } else if (change.a === 'd') {
         source = Diff.remove<T>(source, change.p)
-      } else if (change.a === "i") {
+      } else if (change.a === 'i') {
         source = Diff.set<T>(source, change.p, change.t)
       }
     }
 
-    return source;
+    return source
   }
 }
 
@@ -94,8 +94,8 @@ class Socket {
   onConnect(listener: () => void) {
     if (this.isConnected) {
       listener()
-    } 
-    
+    }
+
     this.connectListeners.push(listener)
   }
 
@@ -103,9 +103,24 @@ class Socket {
     return this.socket !== void 0 && this.socket?.readyState === WebSocket.OPEN
   }
 
+  _generateRequestId() {
+    const minCharCode = 48
+    const maxCharCode = 122
+
+    let randomString = ''
+
+    for (let i = 0; i < 10; i++) {
+      const randomCharCode =
+        Math.floor(Math.random() * (maxCharCode - minCharCode + 1)) + minCharCode
+      randomString += String.fromCharCode(randomCharCode)
+    }
+
+    return randomString
+  }
+
   send(data: any): Promise<Response> {
     return new Promise((resolve, reject) => {
-      const request = Math.random().toString(36).substr(2, 5)
+      const request = this._generateRequestId()
       const payload = data
       payload.request = request
 
@@ -162,7 +177,7 @@ class Socket {
       this.connect()
     }
 
-    Object.values(this.stores).forEach((store) => store._disconnected())
+    Object.values(this.stores).forEach((store) => store._disconnected(event))
 
     if (this.keeper !== null) {
       clearInterval(this.keeper)
@@ -172,23 +187,23 @@ class Socket {
 
 const socket = new Socket()
 
-interface StoreConfig {
+interface StoreConfig<T> {
   session?: string
   store: string
   params: { [key: string]: any }
-  subscribe?: () => void
-  connection?: () => void
+  subscribe?: (state: T) => void
+  onConnected?: () => void
+  onError?: (error: unknown) => void
+  onDisconnected?: (event: CloseEvent) => void
 }
 
 class Storex<T> {
   private session: string | null
-  private config: any
+  private config: StoreConfig<T>
   private socket: Socket
   private listeners: {
-    connection: ((state: boolean) => void)[]
     messages: ((state: T) => void)[]
   } = {
-    connection: [],
     messages: [],
   }
 
@@ -198,7 +213,7 @@ class Storex<T> {
     params: {},
   }
 
-  constructor(config: StoreConfig) {
+  constructor(config: StoreConfig<T>) {
     this.session = config.session || null
     this.config = config
     this.socket = socket
@@ -215,10 +230,6 @@ class Storex<T> {
       this.listeners.messages.push(this.config.subscribe)
     }
 
-    if (this.config.connection) {
-      this.listeners.connection.push(this.config.connection)
-    }
-
     this.socket.onConnect(this._connected.bind(this))
     this.socket.connect()
   }
@@ -232,22 +243,25 @@ class Storex<T> {
         store: this.config.store,
         data: { ...Storex.defaults.params, ...this.config.params },
       })
-      .then((response: Response) => {
-        this.session = response.session
-        this._mutate(response)
+      .then(
+        (response: Response) => {
+          this.session = response.session
+          this._mutate(response)
 
-        for (let i = 0; i < this.listeners.connection.length; i++) {
-          const listener = this.listeners.connection[i]
-          listener(this.socket.isConnected)
-        }
-      })
+          if (typeof this.config.onConnected == 'function') {
+            this.config.onConnected()
+          }
+        },
+        (error: Error) => {
+          if (typeof this.config.onError == 'function') {
+            this.config.onError(error.error)
+          }
+        },
+      )
   }
 
-  _disconnected() {
-    for (let i = 0; i < this.listeners.connection.length; i++) {
-      const listener = this.listeners.connection[i]
-      listener(this.socket.isConnected)
-    }
+  _disconnected(event: CloseEvent) {
+    this.config.onDisconnected(event)
   }
 
   _mutate(message: any) {
@@ -303,25 +317,6 @@ class Storex<T> {
       const index = this?.listeners.messages.indexOf(listener)
       if (index > -1) {
         this.listeners.messages.splice(index, 1)
-      }
-    }
-  }
-
-  connection(listener: (state: boolean) => void): () => void {
-    if (typeof listener !== 'function') {
-      throw new ErrorEvent('Listener has to be a function.')
-    }
-
-    this.listeners.connection.push(listener)
-
-    if (this.socket.isConnected) {
-      listener(this.socket.isConnected)
-    }
-
-    return function unsubscribe() {
-      const index = this.listeners.connection.indexOf(listener)
-      if (index > -1) {
-        this.listeners.connection.splice(index, 1)
       }
     }
   }

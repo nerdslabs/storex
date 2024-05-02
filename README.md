@@ -56,14 +56,20 @@ end
 
 ### Create store
 
-To create a store you need to create new elixir module with `init/2` which is called when a page is loaded, every time websocket is connected it generates session_id and passes it as the first argument, params are from Javascript store declaration. Next, you can declare `mutation/5` where the first argument is mutation name, second is data passed to mutation, next two params are same like in `init/2`, the last one is the current state of the store.
+To create a store you need to create new elixir module with `init/2` which is called when a page is loaded, every time websocket is connected it generates session_id and passes it as the first argument, params are from Javascript store declaration. `init/2` callback need to return one of this tuples:
+
+- `{:ok, state}` - for initial state
+- `{:ok, state, key}` - for initial state with `key` which can be used as selector for future mutations
+- `{:error, reason}` - to send error message to frontend on initialization
+
+Next, you can declare `mutation/5` where the first argument is mutation name, second is data passed to mutation, next two params are same like in `init/2`, the last one is the current state of the store.
 
 ```elixir
 defmodule ExampleApp.Store.Counter do
   use Storex.Store
 
   def init(session_id, params) do
-    0
+    {:ok, 0}
   end
 
   # `increase` is mutation name, `data` is payload from front-end, `session_id` is current session id of connecton, `initial_params` with which store was initialized, `state` is store current state.
@@ -98,8 +104,14 @@ const store = new Storex({
   subscribe: (state) => {
     console.log(state)
   },
-  connection: (state) => {
-    console.log(state ? 'connected' : 'disconnected')
+  onConnected() {
+    console.log('connected')
+  },
+  onError(error) {
+    console.log('error', error)
+  },
+  onDisconnected(closeEvent) {
+    console.log('disconnected', closeEvent)
   }
 })
 ```
@@ -119,8 +131,10 @@ store.commit("set", 10)
 Or directly from elixir:
 
 ```elixir
-Storex.mutate(session_id, store, "increase")
-Storex.mutate(session_id, store, "set", [10])
+Storex.mutate(store, "increase", [])
+Storex.mutate(store, "set", [10])
+Storex.mutate(key, store, "increase", [])
+Storex.mutate(key, store, "set", [10])
 ```
 
 ### Subscribe to store state changes
@@ -130,16 +144,6 @@ You can subscribe to store state changes in javascript with function subscribe:
 ```javascript
 store.subscribe((state) => {
   const state = state
-})
-```
-
-### Subscribe to store connection
-
-You can subscribe to store connection state changes in javascript with function connection:
-
-```javascript
-store.connection((state) => {
-  console.log(state ? 'connected' : 'disconnected')
 })
 ```
 

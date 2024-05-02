@@ -1,83 +1,98 @@
 defmodule Storex.Registry do
-  @doc """
-  Register session PID with a `session` id.
-  """
-  @callback register_session(session :: String.t(), pid()) :: {:ok, pid} | :error
+  @moduledoc false
 
-  @doc """
-  Unregister session with a `session` id.
-  """
-  @callback unregister_session(session :: String.t()) :: :ok | :error
+  use GenServer
 
-  @doc """
-  Gets session PID by `session` id.
-  """
-  @callback session_pid(session :: String.t()) :: pid() | :undefined
+  @registry :storex_registry
 
-  @doc """
-  Return list of stores registered with `session` id.
-  """
-  @callback session_stores(session :: String.t()) :: [String.t()]
-
-  @doc """
-  Register store PID in `session` by id with `store` id.
-  """
-  @callback register_store(session :: String.t(), store :: String.t(), pid()) ::
-              {:ok, pid} | :error
-
-  @doc """
-  Unegister store in `session` by id with `store` id.
-  """
-  @callback unregister_store(session :: String.t(), store :: String.t()) :: :ok | :error
-
-  @doc """
-  Returns store PID by `session` id and `store` id.
-  """
-  @callback get_store_pid(session :: String.t(), store :: String.t()) :: pid() | :undefined
-
-  defp implementation() do
-    Application.get_env(:storex, :registry, Storex.Registry.ETS)
+  def start_link(_) do
+    GenServer.start_link(__MODULE__, nil, name: @registry)
   end
 
-  @doc false
-  def register_session(session, pid) do
-    implementation()
-    |> Kernel.apply(:register_session, [session, pid])
+  def init(nil) do
+    :ets.new(@registry, [:bag, :protected, :named_table])
+
+    {:ok, %{}}
   end
 
-  @doc false
-  def unregister_session(session) do
-    implementation()
-    |> Kernel.apply(:unregister_session, [session])
-  end
-
-  @doc false
   def session_pid(session) do
-    implementation()
-    |> Kernel.apply(:session_pid, [session])
+    GenServer.call(@registry, {:session_pid, session})
   end
 
-  @doc false
-  def register_store(session, store, pid) do
-    implementation()
-    |> Kernel.apply(:register_store, [session, store, pid])
+  def register_store(store, store_pid, session, session_pid, key) do
+    GenServer.call(@registry, {:register_store, store, store_pid, session, session_pid, key})
   end
 
-  @doc false
-  def unregister_store(session, store) do
-    implementation()
-    |> Kernel.apply(:unregister_store, [session, store])
+  def unregister_store(store, session) do
+    GenServer.call(@registry, {:unregister_store, store, session})
   end
 
-  @doc false
-  def get_store_pid(session, store) do
-    implementation()
-    |> Kernel.apply(:get_store_pid, [session, store])
+  def get_store(store, session) do
+    GenServer.call(@registry, {:get_store, store, session})
   end
 
-  @doc false
+  def get_store_pid(store, session) do
+    GenServer.call(@registry, {:get_store_pid, store, session})
+  end
+
+  def get_store_instances(query) do
+    GenServer.call(@registry, {:get_store_instances, query})
+  end
+
   def session_stores(session) do
-    implementation()
-    |> Kernel.apply(:session_stores, [session])
+    GenServer.call(@registry, {:session_stores, session})
+  end
+
+  def handle_call({:session_pid, session}, _from, state) do
+    :ets.match(@registry, {:_, session, :_, :"$1"})
+    |> case do
+      [] -> {:reply, :undefined, state}
+      [[pid] | _tail] -> {:reply, pid, state}
+    end
+  end
+
+  def handle_call({:register_store, store, store_pid, session, session_pid, key}, _from, state) do
+    :ets.insert(@registry, {store, store_pid, session, session_pid, key})
+    Process.monitor(store_pid)
+    {:reply, {:ok, store_pid}, state}
+  end
+
+  def handle_call({:unregister_store, store, session}, _from, state) do
+    result = :ets.match_delete(@registry, {store, :_, session, :_, :_})
+    {:reply, result, state}
+  end
+
+  def handle_call({:get_store, store, session}, _from, state) do
+    :ets.match_object(@registry, {store, :"$1", session, :_, :_})
+    |> case do
+      [] -> {:reply, :undefined, state}
+      [object | _tail] -> {:reply, object, state}
+    end
+  end
+
+  def handle_call({:get_store_pid, store, session}, _from, state) do
+    :ets.match(@registry, {store, :"$1", session, :_, :_})
+    |> case do
+      [] -> {:reply, :undefined, state}
+      [[pid] | _tail] -> {:reply, pid, state}
+    end
+  end
+
+  def handle_call({:get_store_instances, query}, _from, state) do
+    instances = :ets.match_object(@registry, query)
+
+    {:reply, instances, state}
+  end
+
+  def handle_call({:session_stores, session}, _from, state) do
+    stores = :ets.match_object(@registry, {:_, :_, session, :_, :_})
+
+    {:reply, stores, state}
+  end
+
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, _state) do
+    :ets.match_delete(@registry, {:_, :_, pid})
+
+    {:noreply, :ok}
   end
 end

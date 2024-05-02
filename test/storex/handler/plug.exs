@@ -40,6 +40,21 @@ defmodule StorexTest.Handler.Plug do
                Jason.decode!(result, keys: :atoms)
     end
 
+    test "error", context do
+      client = tcp_client(context)
+      http1_handshake(client, Storex.Handler.Plug)
+
+      send_text_frame(client, """
+      {
+        "type": "join",
+        "store": "StorexTest.Store.ErrorInit",
+        "data": {}
+      }
+      """)
+
+      assert recv_connection_close_frame(client) == {:ok, <<4002::16, "Unauthorized"::binary>>}
+    end
+
     test "not existing store", context do
       client = tcp_client(context)
       http1_handshake(client, Storex.Handler.Plug)

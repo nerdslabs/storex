@@ -42,9 +42,9 @@ defmodule StorexTest.Browser.Bandit do
       session
       |> visit("http://localhost:#{@port}/")
 
-    session_id = session |> text(css(".session"))
+    assert session |> text(css(".session")) |> String.length() > 0
 
-    Storex.mutate(session_id, "StorexTest.Store.Counter", "increase")
+    Storex.mutate("StorexTest.Store.Counter", "increase", [])
 
     session
     |> assert_has(css(".counter-value", text: "1"))
@@ -63,5 +63,17 @@ defmodule StorexTest.Browser.Bandit do
     |> fill_in(css(".input-text"), with: "John Doe")
     |> click(css(".text-send"))
     |> assert_has(css(".text-value", text: "John Doe"))
+  end
+
+  test "test join error", %{session: session} do
+    session
+    |> visit("http://localhost:#{@port}/")
+    |> assert_has(css(".error-message", text: "Unauthorized"))
+  end
+
+  def sleep(session, time \\ 10000) do
+    Process.sleep(time)
+
+    session
   end
 end

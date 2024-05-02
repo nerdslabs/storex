@@ -7,18 +7,14 @@ defmodule Storex.Handler.Plug do
     session = Application.get_env(:storex, :session_id_library, Nanoid).generate()
     pid = self()
 
-    Storex.Registry.register_session(session, pid)
-
     {:ok, %{session: session, pid: pid}}
   end
 
   def terminate(_reason, %{session: session}) do
     Storex.Registry.session_stores(session)
-    |> Enum.each(fn {session, store, _} ->
+    |> Enum.each(fn {store, _, session, _, _} ->
       Storex.Supervisor.remove_store(session, store)
     end)
-
-    Storex.Registry.unregister_session(session)
 
     :ok
   end
