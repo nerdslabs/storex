@@ -229,7 +229,9 @@
             });
         };
         Storex.prototype._disconnected = function (event) {
-            this.config.onDisconnected(event);
+            if (typeof this.config.onDisconnected == 'function') {
+                this.config.onDisconnected(event);
+            }
         };
         Storex.prototype._mutate = function (message) {
             if (message.diff !== void 0) {

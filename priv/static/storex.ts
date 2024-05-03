@@ -261,7 +261,9 @@ class Storex<T> {
   }
 
   _disconnected(event: CloseEvent) {
-    this.config.onDisconnected(event)
+    if (typeof this.config.onDisconnected == 'function') {
+      this.config.onDisconnected(event)
+    }
   }
 
   _mutate(message: any) {
