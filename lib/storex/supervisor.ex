@@ -58,9 +58,9 @@ defmodule Storex.Supervisor do
   end
 
   def remove_store(session, store) do
-    Storex.Registry.unregister_store(store, session)
-
     Storex.Registry.get_store_pid(store, session)
     |> GenServer.cast(:session_ended)
+
+    Storex.Registry.unregister_store(store, session)
   end
 end
