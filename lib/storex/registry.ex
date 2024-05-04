@@ -91,7 +91,7 @@ defmodule Storex.Registry do
   end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, _state) do
-    :ets.match_delete(@registry, {:_, :_, pid})
+    :ets.match_delete(@registry, {:_, pid, :_, :_, :_})
 
     {:noreply, :ok}
   end
