@@ -8,17 +8,8 @@ defmodule StorexTest.Store.KeyInit do
      }, "user_id"}
   end
 
-  def mutation("increase", _data, _session_id, _params, state) do
-    counter = state.counter + 1
-
-    {:noreply,
-     %{
-       counter: counter
-     }}
-  end
-
-  def mutation("decrease", _data, _session_id, _params, state) do
-    counter = state.counter - 1
+  def mutation("set", [value], _session_id, _params, _state) do
+    counter = value
 
     {:reply, "decreased",
      %{

@@ -70,10 +70,4 @@ defmodule StorexTest.Browser.Bandit do
     |> visit("http://localhost:#{@port}/")
     |> assert_has(css(".error-message", text: "Unauthorized"))
   end
-
-  def sleep(session, time \\ 10000) do
-    Process.sleep(time)
-
-    session
-  end
 end

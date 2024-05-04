@@ -112,7 +112,7 @@ defmodule StorexTest do
       assert {:ok, _pid} = Storex.Supervisor.add_store(store, session, pid, %{})
 
       Node.spawn(node_1, fn ->
-        Storex.mutate("user_id", store, "increase", [])
+        Storex.mutate("user_id", store, "set", [1])
       end)
 
       assert_receive :ok
@@ -123,7 +123,7 @@ defmodule StorexTest do
     test "don't mutate store for invalid key", %{session: session, store: store, pid: pid} do
       assert {:ok, _pid} = Storex.Supervisor.add_store(store, session, pid, %{})
 
-      Storex.mutate("invalid_key", store, "increase", [])
+      Storex.mutate("invalid_key", store, "set", [1])
 
       refute_receive :ok
 
@@ -145,7 +145,7 @@ defmodule StorexTest do
       assert {:ok, _pid} = Storex.Supervisor.add_store(store, session, pid, %{})
 
       Node.spawn(node_1, fn ->
-        Storex.mutate("invalid_key", store, "increase", [])
+        Storex.mutate("invalid_key", store, "set", [1])
       end)
 
       refute_receive :ok
