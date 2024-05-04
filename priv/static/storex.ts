@@ -203,8 +203,14 @@ class Storex<T> {
   private socket: Socket
   private listeners: {
     messages: ((state: T) => void)[]
+    connected: (() => void)[]
+    errors: ((error: unknown) => void)[]
+    disconnected: ((event: CloseEvent) => void)[]
   } = {
     messages: [],
+    connected: [],
+    errors: [],
+    disconnected: [],
   }
 
   public state: T
@@ -230,6 +236,30 @@ class Storex<T> {
       this.listeners.messages.push(this.config.subscribe)
     }
 
+    if (this.config.onConnected) {
+      if (typeof this.config.onConnected !== 'function') {
+        throw new ErrorEvent('Listener has to be a function.')
+      }
+
+      this.listeners.connected.push(this.config.onConnected)
+    }
+
+    if (this.config.onError) {
+      if (typeof this.config.onError !== 'function') {
+        throw new ErrorEvent('Listener has to be a function.')
+      }
+
+      this.listeners.errors.push(this.config.onError)
+    }
+
+    if (this.config.onDisconnected) {
+      if (typeof this.config.onDisconnected !== 'function') {
+        throw new ErrorEvent('Listener has to be a function.')
+      }
+
+      this.listeners.disconnected.push(this.config.onDisconnected)
+    }
+
     this.socket.onConnect(this._connected.bind(this))
     this.socket.connect()
   }
@@ -248,22 +278,16 @@ class Storex<T> {
           this.session = response.session
           this._mutate(response)
 
-          if (typeof this.config.onConnected == 'function') {
-            this.config.onConnected()
-          }
+          this.listeners.connected.forEach((listener) => listener())
         },
         (error: Error) => {
-          if (typeof this.config.onError == 'function') {
-            this.config.onError(error.error)
-          }
+          this.listeners.errors.forEach((listener) => listener(error.error))
         },
       )
   }
 
   _disconnected(event: CloseEvent) {
-    if (typeof this.config.onDisconnected == 'function') {
-      this.config.onDisconnected(event)
-    }
+    this.listeners.disconnected.forEach((listener) => listener(event))
   }
 
   _mutate(message: any) {
@@ -319,6 +343,51 @@ class Storex<T> {
       const index = this?.listeners.messages.indexOf(listener)
       if (index > -1) {
         this.listeners.messages.splice(index, 1)
+      }
+    }
+  }
+
+  onConnected(listener: () => void): () => void {
+    if (typeof listener !== 'function') {
+      throw new ErrorEvent('Listener has to be a function.')
+    }
+
+    this.listeners.connected.push(listener)
+
+    return function unsubscribe() {
+      const index = this?.listeners.connected.indexOf(listener)
+      if (index > -1) {
+        this.listeners.connected.splice(index, 1)
+      }
+    }
+  }
+
+  onError(listener: (error: unknown) => void): () => void {
+    if (typeof listener !== 'function') {
+      throw new ErrorEvent('Listener has to be a function.')
+    }
+
+    this.listeners.errors.push(listener)
+
+    return function unsubscribe() {
+      const index = this?.listeners.errors.indexOf(listener)
+      if (index > -1) {
+        this.listeners.errors.splice(index, 1)
+      }
+    }
+  }
+
+  onDisconnected(listener: (event: CloseEvent) => void): () => void {
+    if (typeof listener !== 'function') {
+      throw new ErrorEvent('Listener has to be a function.')
+    }
+
+    this.listeners.disconnected.push(listener)
+
+    return function unsubscribe() {
+      const index = this?.listeners.disconnected.indexOf(listener)
+      if (index > -1) {
+        this.listeners.disconnected.splice(index, 1)
       }
     }
   }

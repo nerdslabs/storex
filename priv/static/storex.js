@@ -191,6 +191,9 @@
         function Storex(config) {
             this.listeners = {
                 messages: [],
+                connected: [],
+                errors: [],
+                disconnected: [],
             };
             this.session = config.session || null;
             this.config = config;
@@ -203,6 +206,24 @@
                     throw new ErrorEvent('Listener has to be a function.');
                 }
                 this.listeners.messages.push(this.config.subscribe);
+            }
+            if (this.config.onConnected) {
+                if (typeof this.config.onConnected !== 'function') {
+                    throw new ErrorEvent('Listener has to be a function.');
+                }
+                this.listeners.connected.push(this.config.onConnected);
+            }
+            if (this.config.onError) {
+                if (typeof this.config.onError !== 'function') {
+                    throw new ErrorEvent('Listener has to be a function.');
+                }
+                this.listeners.errors.push(this.config.onError);
+            }
+            if (this.config.onDisconnected) {
+                if (typeof this.config.onDisconnected !== 'function') {
+                    throw new ErrorEvent('Listener has to be a function.');
+                }
+                this.listeners.disconnected.push(this.config.onDisconnected);
             }
             this.socket.onConnect(this._connected.bind(this));
             this.socket.connect();
@@ -219,19 +240,13 @@
                 .then(function (response) {
                 _this.session = response.session;
                 _this._mutate(response);
-                if (typeof _this.config.onConnected == 'function') {
-                    _this.config.onConnected();
-                }
+                _this.listeners.connected.forEach(function (listener) { return listener(); });
             }, function (error) {
-                if (typeof _this.config.onError == 'function') {
-                    _this.config.onError(error.error);
-                }
+                _this.listeners.errors.forEach(function (listener) { return listener(error.error); });
             });
         };
         Storex.prototype._disconnected = function (event) {
-            if (typeof this.config.onDisconnected == 'function') {
-                this.config.onDisconnected(event);
-            }
+            this.listeners.disconnected.forEach(function (listener) { return listener(event); });
         };
         Storex.prototype._mutate = function (message) {
             if (message.diff !== void 0) {
@@ -285,6 +300,42 @@
                 var index = this === null || this === void 0 ? void 0 : this.listeners.messages.indexOf(listener);
                 if (index > -1) {
                     this.listeners.messages.splice(index, 1);
+                }
+            };
+        };
+        Storex.prototype.onConnected = function (listener) {
+            if (typeof listener !== 'function') {
+                throw new ErrorEvent('Listener has to be a function.');
+            }
+            this.listeners.connected.push(listener);
+            return function unsubscribe() {
+                var index = this === null || this === void 0 ? void 0 : this.listeners.connected.indexOf(listener);
+                if (index > -1) {
+                    this.listeners.connected.splice(index, 1);
+                }
+            };
+        };
+        Storex.prototype.onError = function (listener) {
+            if (typeof listener !== 'function') {
+                throw new ErrorEvent('Listener has to be a function.');
+            }
+            this.listeners.errors.push(listener);
+            return function unsubscribe() {
+                var index = this === null || this === void 0 ? void 0 : this.listeners.errors.indexOf(listener);
+                if (index > -1) {
+                    this.listeners.errors.splice(index, 1);
+                }
+            };
+        };
+        Storex.prototype.onDisconnected = function (listener) {
+            if (typeof listener !== 'function') {
+                throw new ErrorEvent('Listener has to be a function.');
+            }
+            this.listeners.disconnected.push(listener);
+            return function unsubscribe() {
+                var index = this === null || this === void 0 ? void 0 : this.listeners.disconnected.indexOf(listener);
+                if (index > -1) {
+                    this.listeners.disconnected.splice(index, 1);
                 }
             };
         };
