@@ -6,8 +6,6 @@ defmodule Storex.Handler.Cowboy do
   def init(request, _state) do
     session = Application.get_env(:storex, :session_id_library, Nanoid).generate()
 
-    Storex.Registry.register_session(session, request.pid)
-
     {:cowboy_websocket, request, %{session: session, pid: request.pid}}
   end
 
@@ -17,11 +15,9 @@ defmodule Storex.Handler.Cowboy do
 
   def terminate(_reason, _req, %{session: session}) do
     Storex.Registry.session_stores(session)
-    |> Enum.each(fn {session, store, _} ->
+    |> Enum.each(fn {store, _, session, _, _} ->
       Storex.Supervisor.remove_store(session, store)
     end)
-
-    Storex.Registry.unregister_session(session)
 
     :ok
   end

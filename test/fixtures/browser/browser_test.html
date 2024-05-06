@@ -16,6 +16,9 @@
     <div class="text-value"></div>
     <button class="text-send"></button>
   </div>
+  <div>
+    <div class="error-message"></div>
+  </div>
 
   <script src="/static/storex.js"></script>
   <script>
@@ -31,8 +34,8 @@
         session.innerHTML = counterStore.session
         counterValue.innerHTML = state.counter
       },
-      connection(state) {
-        counterConnected.innerHTML = state
+      onConnected() {
+        counterConnected.innerHTML = 'true'
       }
     })
 
@@ -58,6 +61,18 @@
     })
 
     document.querySelector('button.text-send').addEventListener('click', () => textStore.commit('change', inputText.value))
+
+    const errorInitStore = new storex({
+      store: "StorexTest.Store.ErrorInit",
+      params: {},
+      subscribe: (state) => {
+        session.innerHTML = counterStore.session
+        counterValue.innerHTML = state.counter
+      },
+      onError(message) {
+        document.querySelector('.error-message').innerHTML = message
+      }
+    })
   </script>
 </body>
 

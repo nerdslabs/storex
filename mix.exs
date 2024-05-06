@@ -18,7 +18,10 @@ defmodule Storex.MixProject do
       homepage_url: "http://nerdslabs.co",
       docs: docs(),
       description: description(),
-      package: package()
+      package: package(),
+      aliases: [
+        test: "test --no-start"
+      ]
     ]
   end
 
@@ -27,8 +30,7 @@ defmodule Storex.MixProject do
 
   def application do
     [
-      mod: {Storex, []},
-      extra_applications: [:logger]
+      mod: {Storex, []}
     ]
   end
 
@@ -56,7 +58,8 @@ defmodule Storex.MixProject do
       {:wallaby, "~> 0.30.0", runtime: false, only: :test},
       {:cowboy, "~> 2.9", only: :test},
       {:bandit, "~> 1.4", only: :test},
-      {:plug_cowboy, "~> 2.0", only: :test}
+      {:plug_cowboy, "~> 2.0", only: :test},
+      {:local_cluster, "~> 1.2", only: [:test]}
     ]
   end
 

@@ -15,55 +15,52 @@ defmodule Storex.Supervisor do
     )
   end
 
-  def has_store(session, store) do
-    Storex.Registry.get_store_pid(session, store)
-    |> case do
-      :undefined -> false
-      _ -> true
-    end
-  end
-
   def name(session, store) do
     String.to_atom("#{session}_#{store}")
   end
 
-  def add_store(session, store, params \\ %{}) do
-    store_server = Module.concat([store, "Server"])
-
-    spec = %{
-      id: store_server,
-      start: {store_server, :start_link, [[session: session, store: store, params: params]]},
-      restart: :transient
-    }
-
-    # TODO: If server not start error is not raised!
-    DynamicSupervisor.start_child(__MODULE__, spec)
+  def add_store(store, session, session_pid, params \\ %{}) do
+    Storex.Registry.get_store(store, session)
     |> case do
-      {:error, error} -> IO.warn(error)
-      result -> result
-    end
-    |> case do
-      {:ok, pid} ->
-        Storex.Registry.register_store(session, store, pid)
+      :undefined ->
+        store_server = Module.concat([store, "Server"])
 
-      _ ->
-        :error
+        spec = %{
+          id: store_server,
+          start: {store_server, :start_link, [[session: session, store: store, params: params]]},
+          restart: :transient
+        }
+
+        DynamicSupervisor.start_child(__MODULE__, spec)
+        |> case do
+          {:ok, store_pid, %{key: key}} ->
+            Storex.Registry.register_store(store, store_pid, session, session_pid, key)
+            {:ok, key}
+
+          {:error, error} ->
+            {:error, error}
+        end
+
+      {_, _, _, _, key} ->
+        {:ok, key}
     end
   end
 
   def get_store_state(session, store) do
-    Storex.Registry.get_store_pid(session, store)
+    Storex.Registry.get_store_pid(store, session)
     |> :sys.get_state()
     |> Map.get(:state)
   end
 
   def mutate_store(session, store, name, data) do
-    Storex.Registry.get_store_pid(session, store)
+    Storex.Registry.get_store_pid(store, session)
     |> GenServer.call({name, data})
   end
 
   def remove_store(session, store) do
-    Storex.Registry.get_store_pid(session, store)
+    Storex.Registry.get_store_pid(store, session)
     |> GenServer.cast(:session_ended)
+
+    Storex.Registry.unregister_store(store, session)
   end
 end
