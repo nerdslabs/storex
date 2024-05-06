@@ -16,7 +16,7 @@ Add **storex** to deps in `mix.exs`:
 
 ```elixir
 defp deps do
-  [{:storex, "~> 0.3.0"}]
+  [{:storex, "~> 0.4.0"}]
 end
 ```
 
@@ -137,13 +137,29 @@ Storex.mutate(key, store, "increase", [])
 Storex.mutate(key, store, "set", [10])
 ```
 
-### Subscribe to store state changes
+### Subscribe to store changes
 
 You can subscribe to store state changes in javascript with function subscribe:
 
 ```javascript
 store.subscribe((state) => {
   const state = state
+})
+```
+
+You can also subscribe to events after store is created:
+
+```javascript
+store.onConnected(() => {
+  console.log('connected')
+})
+
+store.onError((error) => {
+  console.log('error', error)
+})
+
+store.onDisconnected((closeEvent) => {
+  console.log('disconnected', closeEvent)
 })
 ```
 
