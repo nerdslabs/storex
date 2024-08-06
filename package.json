@@ -1,8 +1,17 @@
 {
   "name": "storex",
   "version": "0.4.0",
-  "main": "priv/static/storex.js",
-  "types": "priv/static/storex.d.ts",
+  "main": "./priv/static/storex.js",
+  "module": "./priv/static/storex.esm.js",
+  "types": "./priv/static/storex.d.ts",
+  "exports": {
+    ".": {
+      "import": "./priv/static/storex.esm.js",
+      "require": "./priv/static/storex.cjs.ts",
+      "types": "./priv/static/storex.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
   "author": "NERDSLABS <office@nerdslabs.co>",
   "license": "Apache-2.0"
 }

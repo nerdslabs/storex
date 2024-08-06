@@ -1,5 +1,10 @@
 # storex
 
+## 0.5.0
+
+- **[BREAKING]** Frontend client fully rewritten
+- Added support for non browser environment
+
 ## 0.4.0
 
 - **[BREAKING]** `Storex.mutate/3` is no longer based on `session_id`

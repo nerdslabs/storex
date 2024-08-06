@@ -42,6 +42,24 @@ defmodule StorexTest.Plug do
     assert %{state: :upgraded} = response
   end
 
+  test ":set Cowboy" do
+    options = Storex.Plug.init()
+
+    response =
+      %Plug.Conn{adapter: {Plug.Cowboy.Conn, %{version: :"HTTP/1.1"}}}
+      |> Map.put(:method, "GET")
+      |> Map.put(:request_path, "/storex")
+      |> Map.put(:query_string, "store=StorexTest.Store.Counter&params=%7B%7D")
+      |> Map.update!(:req_headers, &[{"host", "server.example.com"} | &1])
+      |> Storex.Plug.call(options)
+
+    assert %{
+             resp_body:
+               "{\"data\":{\"counter\":0},\"type\":\"join\",\"store\":\"Elixir.StorexTest.Store.Counter\",\"session\":\"SSR\"}",
+             status: 200
+           } = response
+  end
+
   test ":unset with POST" do
     options = Storex.Plug.init()
 

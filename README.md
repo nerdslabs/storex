@@ -16,7 +16,7 @@ Add **storex** to deps in `mix.exs`:
 
 ```elixir
 defp deps do
-  [{:storex, "~> 0.4.0"}]
+  [{:storex, "~> 0.5.0"}]
 end
 ```
 
@@ -53,6 +53,8 @@ end
   ]}
 ])
 ```
+
+_Cowboy doesn't support the Node.js (HTTP Only) connector_
 
 ### Create store
 
@@ -95,24 +97,12 @@ end
 
 You have to connect the newly created store with a frontend side to be able to synchronise the state: `params` are passed as second argument in store `init/2` and as third in `mutation/5`. You can subscribe to changes inside store state by passing option `subscribe` with function as a value.
 
-```javascript
-import Storex from 'storex'
+```typescript
+import useStorex from 'storex'
 
-const store = new Storex({
+const store = useStorex({
   store: 'ExampleApp.Store.Counter',
-  params: {},
-  subscribe: (state) => {
-    console.log(state)
-  },
-  onConnected() {
-    console.log('connected')
-  },
-  onError(error) {
-    console.log('error', error)
-  },
-  onDisconnected(closeEvent) {
-    console.log('disconnected', closeEvent)
-  }
+  params: {}
 })
 ```
 
@@ -120,7 +110,7 @@ const store = new Storex({
 
 You can mutate store from javascript with store instance:
 
-```javascript
+```typescript
 store.commit("increase")
 store.commit("decrease").then((response) => {
   response // Reply from elixir
@@ -141,7 +131,7 @@ Storex.mutate(key, store, "set", [10])
 
 You can subscribe to store state changes in javascript with function subscribe:
 
-```javascript
+```typescript
 store.subscribe((state) => {
   const state = state
 })
@@ -149,7 +139,7 @@ store.subscribe((state) => {
 
 You can also subscribe to events after store is created:
 
-```javascript
+```typescript
 store.onConnected(() => {
   console.log('connected')
 })
@@ -161,6 +151,50 @@ store.onError((error) => {
 store.onDisconnected((closeEvent) => {
   console.log('disconnected', closeEvent)
 })
+```
+
+## Connectors
+The default export of `useStorex` uses WebSocket connections only, you can extend it by using custom connector.
+
+### Websocket
+
+```typescript
+import { prepare, socketConnector } from 'storex';
+
+const connector = socketConnector({ address: 'wss://myapi.com/storex' });
+const { useStorex } = prepare({ /* global params */ }, connector);
+
+const myStore = useStorex<MyStateType>({
+  store: 'myStoreName',
+  params: { /* store-specific params */ }
+});
+```
+
+### Node.js (HTTP Only)
+
+```typescript
+import { prepare, httpConnector } from 'storex';
+
+// Note: Mutations are not supported in HTTP mode
+// myStore.commit() will not work as expected
+
+const connector = httpConnector({ address: 'http://myapi.com/storex' });
+const { useStorex } = prepare({}, connector);
+
+const myStore = useStorex<MyStateType>({
+  store: 'myStoreName',
+  params: { /* store-specific params */ }
+});
+
+// Subscribe to state changes
+myStore.subscribe((state) => {
+  console.log('New state:', state);
+});
+
+// Handle errors
+myStore.onError((error) => {
+  console.error('An error occurred:', error);
+});
 ```
 
 ## Configuration
@@ -175,16 +209,18 @@ config :storex, :session_id_library, Ecto.UUID
 
 ### Default params
 
-You can set default params for all stores in Javascript which will be passed to store.
+You can set default params for all stores when preparing the Storex instance. These params will be passed to each store.
 
-```javascript
-Storex.defaults.params = {
-  jwt: 'someJWT'
-}
+```typescript
+const { useStorex } = prepare({ jwt: 'someJWT' }, connector);
 ```
 
 ### Custom store address
 
-```javascript
-Storex.defaults.address = 'localhost/stores'
+You can specify a custom address when creating the connector:
+
+```typescript
+const connector = socketConnector({ address: 'wss://myapi.com/storex' });
+// OR
+const connector = httpConnector({ address: 'http://myapi.com/storex' });
 ```

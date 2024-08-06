@@ -1,36 +1,64 @@
-declare module "storex" {
-    interface StoreConfig<T> {
-        session?: string;
-        store: string;
-        params: {
-            [key: string]: any;
-        };
-        subscribe?: (state: T) => void;
-        onConnected?: () => void;
-        onError?: (error: unknown) => void;
-        onDisconnected?: (event: CloseEvent) => void;
-    }
-    class Storex<T> {
-        private session;
-        private config;
-        private socket;
-        private listeners;
-        state: T;
-        static defaults: {
-            params: {
-                [key: string]: any;
-            };
-            address?: string;
-        };
-        constructor(config: StoreConfig<T>);
-        _connected(): void;
-        _disconnected(event: CloseEvent): void;
-        _mutate(message: any): void;
-        commit<T>(name: string, ...data: any): Promise<T | undefined>;
-        subscribe(listener: (state: T) => void): () => void;
-        onConnected(listener: () => void): () => void;
-        onError(listener: (error: unknown) => void): () => void;
-        onDisconnected(listener: (event: CloseEvent) => void): () => void;
-    }
-    export default Storex;
-}
+type Change = {
+    a: 'u' | 'd' | 'i';
+    p: any[];
+    t: unknown;
+};
+
+type ResponseJoin<T> = {
+    type: "join";
+    store: string;
+    session: string;
+    data: T;
+};
+type ResponseMutation = {
+    type: "mutation";
+    store: string;
+    session: string;
+    message?: string;
+    diff: Change[];
+};
+type Connector = {
+    onConnected: (listener: () => void) => void;
+    onMutated: (listener: (store: string, session: string, diff: Change[]) => void) => void;
+    onDisconnected: (listener: (event: CloseEvent) => void) => void;
+    connect: () => void;
+    join: <T>(store: string, params: unknown) => Promise<ResponseJoin<T>>;
+    mutate: (store: string, session: string, name: string, data: unknown) => Promise<ResponseMutation>;
+};
+type ConnectorBuilder = (options: {
+    address?: string;
+}) => Connector;
+
+declare const httpConnector: ConnectorBuilder;
+
+declare const socketConnector: ConnectorBuilder;
+
+type Params = {
+    [key: string]: any;
+};
+type StoreConfig = {
+    store: string;
+    params: Params;
+};
+declare const prepare: (params: Params, connector: Connector) => {
+    useStorex: <T>(config: StoreConfig) => {
+        commit: (name: string, ...data: any) => Promise<string | undefined>;
+        readonly state: T;
+        readonly session: string;
+        subscribe: (listener: (state: T) => void) => () => boolean;
+        onConnected: (listener: () => void) => () => boolean;
+        onError: (listener: (error: unknown) => void) => () => boolean;
+        onDisconnected: (listener: (event: CloseEvent) => void) => () => boolean;
+    };
+};
+declare const _default: <T>(config: StoreConfig) => {
+    commit: (name: string, ...data: any) => Promise<string | undefined>;
+    readonly state: T;
+    readonly session: string;
+    subscribe: (listener: (state: T) => void) => () => boolean;
+    onConnected: (listener: () => void) => () => boolean;
+    onError: (listener: (error: unknown) => void) => () => boolean;
+    onDisconnected: (listener: (event: CloseEvent) => void) => () => boolean;
+};
+
+export { _default as default, httpConnector, prepare, socketConnector };

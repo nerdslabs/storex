@@ -35,15 +35,15 @@ defmodule Storex.Socket do
       {:text, message, state}
     else
       {:add_store, {:error, error_message}} ->
-         %{
-           type: "error",
-           session: state.session,
-           store: message.store,
-           error: error_message,
-           request: Map.get(message, :request, nil)
-         }
-         |> Jason.encode!()
-         |> (&{:text, &1, state}).()
+        %{
+          type: "error",
+          session: state.session,
+          store: message.store,
+          error: error_message,
+          request: Map.get(message, :request, nil)
+        }
+        |> Jason.encode!()
+        |> (&{:text, &1, state}).()
 
       _ ->
         {:close, 4001, "Store '#{message.store}' is not defined or can't be compiled.", state}
