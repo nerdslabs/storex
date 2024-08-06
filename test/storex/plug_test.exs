@@ -54,10 +54,16 @@ defmodule StorexTest.Plug do
       |> Storex.Plug.call(options)
 
     assert %{
-             resp_body:
-               "{\"data\":{\"counter\":0},\"type\":\"join\",\"store\":\"Elixir.StorexTest.Store.Counter\",\"session\":\"SSR\"}",
+             resp_body: body,
              status: 200
            } = response
+
+    assert %{
+             "data" => %{"counter" => 0},
+             "session" => "SSR",
+             "store" => "Elixir.StorexTest.Store.Counter",
+             "type" => "join"
+           } = Jason.decode!(body)
   end
 
   test ":unset with POST" do
