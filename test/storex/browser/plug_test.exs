@@ -45,6 +45,7 @@ defmodule StorexTest.Browser.Plug do
     session =
       session
       |> visit("http://localhost:#{@port}/")
+      |> assert_has(css(".counter-connected", text: "true"))
 
     Storex.mutate("StorexTest.Store.Counter", "increase", [])
 
