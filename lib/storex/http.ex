@@ -41,12 +41,11 @@ defmodule Storex.HTTP do
   end
 
   defp get_module(store) do
-    store
-    |> (&Module.concat([&1])).()
-    |> Code.ensure_loaded()
-    |> case do
-      {:module, module} -> {:ok, module}
-      {:error, error} -> {:error, error}
+    try do
+      module = Module.safe_concat([store])
+      {:ok, module}
+    rescue
+      ArgumentError -> {:error, :not_exists}
     end
   end
 
