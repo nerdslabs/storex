@@ -47,52 +47,19 @@ defmodule Storex.Plug do
         } = conn
       ) do
     store = encoded_store |> URI.decode()
+    params = encoded_params |> URI.decode()
 
-    with {:store, {:ok, store}} <- {:store, store |> Storex.HTTP.get_module()},
-         {:params, {:ok, params}} <- {:params, encoded_params |> Storex.HTTP.get_params()},
-         {:state, {:ok, result}} <- {:state, Storex.HTTP.get_state(store, params)} do
-      response = %{
-        type: "join",
-        session: "SSR",
-        store: store,
-        data: result
-      }
-      |> Jason.encode!()
-
-      resp(conn, 200, response)
-    else
-      {:store, {:error, _}} ->
-        response = %{
-          type: "error",
-          session: "SSR",
-          store: store,
-          error: "Store '#{inspect(store)}' is not defined or can't be compiled."
-        }
+    Storex.HTTP.init_store(store, params)
+    |> case do
+      {:ok, result} ->
+        result
         |> Jason.encode!()
+        |> (&resp(conn, 200, &1)).()
 
-        resp(conn, 400, response)
-
-      {:state, {:error, message}} ->
-        response = %{
-          type: "error",
-          session: "SSR",
-          store: store,
-          error: message
-        }
+      {:error, error} ->
+        error
         |> Jason.encode!()
-
-        resp(conn, 400, response)
-
-      _ ->
-        response = %{
-          type: "error",
-          session: "SSR",
-          store: store,
-          error: "Unknown error"
-        }
-        |> Jason.encode!()
-
-        resp(conn, 400, response)
+        |> (&resp(conn, 400, &1)).()
     end
     |> put_resp_content_type("application/json")
     |> halt()

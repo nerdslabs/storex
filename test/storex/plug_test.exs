@@ -61,7 +61,7 @@ defmodule StorexTest.Plug do
     assert %{
              "data" => %{"counter" => 0},
              "session" => "SSR",
-             "store" => "Elixir.StorexTest.Store.Counter",
+             "store" => "StorexTest.Store.Counter",
              "type" => "join"
            } = Jason.decode!(body)
   end

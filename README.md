@@ -172,6 +172,8 @@ const myStore = useStorex<MyStateType>({
 
 ### Node.js (HTTP Only)
 
+**Node.js connector require Node.js installed on server which running application**
+
 ```typescript
 import { prepare, httpConnector } from 'storex';
 

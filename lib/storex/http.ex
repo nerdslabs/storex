@@ -1,6 +1,47 @@
 defmodule Storex.HTTP do
-  def get_module(module) do
-    module
+  def init_store(store, params) do
+    with {:store, {:ok, store_module}} <- {:store, store |> get_module()},
+         {:params, {:ok, params}} <- {:params, params |> get_params()},
+         {:state, {:ok, result}} <- {:state, get_state(store_module, params)} do
+      {:ok,
+       %{
+         type: "join",
+         session: "SSR",
+         store: store,
+         data: result
+       }}
+    else
+      {:store, {:error, _}} ->
+        {:error,
+         %{
+           type: "error",
+           session: "SSR",
+           store: store,
+           error: "Store '#{inspect(store)}' is not defined or can't be compiled."
+         }}
+
+      {:state, {:error, message}} ->
+        {:error,
+         %{
+           type: "error",
+           session: "SSR",
+           store: store,
+           error: message
+         }}
+
+      _ ->
+        {:error,
+         %{
+           type: "error",
+           session: "SSR",
+           store: store,
+           error: "Unknown error"
+         }}
+    end
+  end
+
+  defp get_module(store) do
+    store
     |> (&Module.concat([&1])).()
     |> Code.ensure_loaded()
     |> case do
@@ -9,13 +50,12 @@ defmodule Storex.HTTP do
     end
   end
 
-  def get_params(encoded_params) do
-    encoded_params
-    |> URI.decode()
+  defp get_params(params) do
+    params
     |> Jason.decode(keys: :atoms)
   end
 
-  def get_state(module, params) do
+  defp get_state(module, params) do
     module
     |> apply(:init, ["SSR", params])
     |> result()
