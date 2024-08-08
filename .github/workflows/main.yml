@@ -13,31 +13,47 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       MIX_ENV: test
-    name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
+    name: OTP ${{matrix.version.version.otp}} / Elixir ${{matrix.version.elixir}}
     strategy:
       matrix:
-        otp: ['24', '25', '26', '27']
-        elixir: ['1.14', '1.15', '1.16', '1.17']
+        version:
+          [
+            { elixir: "1.14", otp: "23" },
+            { elixir: "1.14", otp: "24" },
+            { elixir: "1.14", otp: "25" },
+
+            { elixir: "1.15", otp: "24" },
+            { elixir: "1.15", otp: "25" },
+            { elixir: "1.15", otp: "26" },
+
+            { elixir: "1.16", otp: "24" },
+            { elixir: "1.16", otp: "25" },
+            { elixir: "1.16", otp: "26" },
+
+            { elixir: "1.17", otp: "25" },
+            { elixir: "1.17", otp: "26" },
+            { elixir: "1.17", otp: "27" },
+          ]
     steps:
-    - uses: actions/checkout@v4
-    - uses: erlef/setup-beam@v1
-      with:
-        otp-version: ${{matrix.otp}}
-        elixir-version: ${{matrix.elixir}}
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 20
-    - uses: actions/cache@v4
-      with:
-        path: deps
-        key: ${{ runner.os }}-${{matrix.otp}}-${{matrix.elixir}}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
-        restore-keys: |
-          ${{ runner.os }}-${{matrix.otp}}-${{matrix.elixir}}-mix-
-    - name: Install Dependencies
-      run: |
-        epmd -daemon
-        mix local.rebar --force
-        mix local.hex --force
-        mix deps.get
-    - name: Run Tests
-      run: mix test
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.version.otp}}
+          elixir-version: ${{matrix.version.elixir}}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/cache@v4
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{matrix.version.otp}}-${{matrix.version.elixir}}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+          restore-keys: |
+            ${{ runner.os }}-${{matrix.version.otp}}-${{matrix.version.elixir}}-mix-
+      - name: Install Dependencies
+        run: |
+          epmd -daemon
+          mix local.rebar --force
+          mix local.hex --force
+          mix deps.get
+      - name: Run Tests
+        run: mix test
