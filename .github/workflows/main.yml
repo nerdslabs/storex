@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       MIX_ENV: test
-    name: OTP ${{matrix.version.version.otp}} / Elixir ${{matrix.version.elixir}}
+    name: OTP ${{matrix.version.otp}} / Elixir ${{matrix.version.elixir}}
     strategy:
       matrix:
         version:
