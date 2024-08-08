@@ -18,7 +18,6 @@ jobs:
       matrix:
         version:
           [
-            { elixir: "1.14", otp: "23" },
             { elixir: "1.14", otp: "24" },
             { elixir: "1.14", otp: "25" },
 
