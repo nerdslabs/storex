@@ -213,13 +213,13 @@ myStore.onError((error) => {
 });
 ```
 
+> [!IMPORTANT]
+> Mutations are not supported in HTTP mode
+> myStore.commit() will not work as expected
+
 ## Configuration
 
 ### Session id generation library
-
-> [!IMPORTANT]
-> Note: Mutations are not supported in HTTP mode
-> myStore.commit() will not work as expected
 
 You can change library which generate session id for stores. Module needs to have **generate/0** method.
 
