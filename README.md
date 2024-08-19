@@ -2,11 +2,27 @@
 
 ![Elixir CI](https://github.com/nerdslabs/storex/workflows/Elixir%20CI/badge.svg) [![Downloads](https://img.shields.io/hexpm/dt/storex.svg)](https://hex.pm/packages/storex)
 
-Frontend store with the state on the backend. You are able to mutate store state from the frontend and also from the backend. Whole communication going through WebSocket.
+Storex is a frontend store with state management handled on the backend. It allows you to update the store state both from the frontend and backend, with all communication occurring over WebSocket.
 
-**Important:** Storex is under active development. Report issues and send proposals [here](https://github.com/nerdslabs/storex/issues/new).
+Important: Storex is currently under active development. We encourage you to report any issues or submit feature requests [here](https://github.com/nerdslabs/storex/issues/new).
 
-Only diff of the store state is being sent on each mutation.
+## Why Storex?
+
+### Features
+
+- Efficient state management: Only the differences (diffs) in the store state are sent with each mutation, minimizing data transfer.
+- Real-time updates: State changes are immediately reflected across all connected clients via WebSocket communication.
+- Backend-driven state: Storex allows both the frontend and backend to update the store state seamlessly.
+- Lightweight and fast: Designed for minimal overhead, ensuring rapid state updates and communication.
+
+### Key Differences from Phoenix LiveView
+
+Phoenix LiveView is a powerful tool for building rich, interactive web applications without writing custom JavaScript. However, as your application grows, managing complex client-side state across multiple LiveViews or components can become challenging. This is where Storex comes in.
+
+- Client-Side State Management: While Phoenix LiveView handles server-side rendering and event handling, Storex focuses on managing state on the client side. It allows you to keep your client-side state in sync with the server, but with more flexibility in how that state is stored, updated, and accessed.
+- Decoupled State Logic: Storex decouples state management from the LiveView itself, enabling you to manage state across multiple components or even across the entire application. This contrasts with LiveView, where state is typically tied to a specific LiveView process.
+- Predictable State Updates: Storex follows a predictable, unidirectional data flow similar to Redux. This makes it easier to reason about state changes and debug issues, especially in complex applications.
+- Extensibility: Storex is designed to be highly extensible, allowing you to integrate it with other tools and libraries in the Elixir ecosystem. You can also define custom middleware to handle side effects, logging, or other tasks.
 
 ## Basic usage
 
@@ -54,7 +70,8 @@ end
 ])
 ```
 
-_Cowboy doesn't support the Node.js (HTTP Only) connector_
+> [!IMPORTANT]
+> Cowboy doesn't support the Node.js (HTTP Only) connector
 
 ### Create store
 
@@ -177,9 +194,6 @@ const myStore = useStorex<MyStateType>({
 ```typescript
 import { prepare, httpConnector } from 'storex';
 
-// Note: Mutations are not supported in HTTP mode
-// myStore.commit() will not work as expected
-
 const connector = httpConnector({ address: 'http://myapi.com/storex' });
 const { useStorex } = prepare({}, connector);
 
@@ -202,6 +216,10 @@ myStore.onError((error) => {
 ## Configuration
 
 ### Session id generation library
+
+> [!IMPORTANT]
+> Note: Mutations are not supported in HTTP mode
+> myStore.commit() will not work as expected
 
 You can change library which generate session id for stores. Module needs to have **generate/0** method.
 
