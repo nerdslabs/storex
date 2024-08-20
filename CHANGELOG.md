@@ -3,6 +3,7 @@
 ## 0.5.0
 
 - **[BREAKING]** Frontend client fully rewritten
+- **[BREAKING]** Updated the minimum required version of Elixir to `1.10`
 - Added support for non browser environment
 
 ## 0.4.0
