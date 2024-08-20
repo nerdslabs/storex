@@ -1,6 +1,6 @@
 {
   "name": "storex",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "main": "./priv/static/storex.umd.js",
   "module": "./priv/static/storex.esm.js",
   "types": "./priv/static/storex.d.ts",
