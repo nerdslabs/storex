@@ -32,8 +32,8 @@ defmodule StorexTest.Diff do
   end
 
   test "diff map" do
-    assert [%{a: "i", p: [:c], t: "c"}, %{a: "d", p: [:b]}, %{a: "u", p: [:a], t: 1}] =
-             Storex.Diff.check(%{a: "a", b: "b"}, %{a: 1, c: "c"})
+    assert [%{a: "d", p: [:b]}, %{p: [:c], a: "i", t: "c"}, %{a: "u", p: [:a], t: 1}] =
+             Storex.Diff.check(%{a: "a", b: "b"}, %{a: 1, c: "c"}) |> Enum.sort()
   end
 
   test "diff struct" do

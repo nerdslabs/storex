@@ -20,29 +20,31 @@
     <div class="error-message"></div>
   </div>
 
-  <script src="/static/storex.js"></script>
+  <script src="/static/storex.umd.js"></script>
   <script>
     const counterConnected = document.querySelector('.counter-connected')
     const session = document.querySelector('.session')
     const counterValue = document.querySelector('.counter-value')
     const reply = document.querySelector('.reply')
 
-    const counterStore = new storex({
+    const store = useStorex.default({
       store: "StorexTest.Store.Counter",
-      params: {},
-      subscribe: (state) => {
-        session.innerHTML = counterStore.session
-        counterValue.innerHTML = state.counter
-      },
-      onConnected() {
-        counterConnected.innerHTML = 'true'
-      }
+      params: {}
     })
 
-    document.querySelector('button.increase').addEventListener('click', () => counterStore.commit('increase'))
+    store.subscribe((state) => {
+      session.innerHTML = store.session
+      counterValue.innerHTML = state.counter
+    })
+
+    store.onConnected(() => {
+      counterConnected.innerHTML = 'true'
+    })
+
+    document.querySelector('button.increase').addEventListener('click', () => store.commit('increase'))
 
     document.querySelector('button.decrease').addEventListener('click', () => {
-      counterStore.commit('decrease').then(response => {
+      store.commit('decrease').then(response => {
         if (response !== void 0) {
           reply.innerHTML = response
         }
@@ -52,26 +54,24 @@
     const inputText = document.querySelector(".input-text")
     const textValue = document.querySelector(".text-value")
 
-    const textStore = new storex({
+    const { commit: tCommit, subscribe: tSubscribe } = useStorex.default({
       store: "StorexTest.Store.Text",
       params: {},
-      subscribe: (state) => {
-        textValue.innerHTML = state
-      },
     })
 
-    document.querySelector('button.text-send').addEventListener('click', () => textStore.commit('change', inputText.value))
+    tSubscribe((state) => {
+      textValue.innerHTML = state
+    })
 
-    const errorInitStore = new storex({
+    document.querySelector('button.text-send').addEventListener('click', () => tCommit('change', inputText.value))
+
+    const { onError } = useStorex.default({
       store: "StorexTest.Store.ErrorInit",
       params: {},
-      subscribe: (state) => {
-        session.innerHTML = counterStore.session
-        counterValue.innerHTML = state.counter
-      },
-      onError(message) {
-        document.querySelector('.error-message').innerHTML = message
-      }
+    })
+
+    onError((message) => {
+      document.querySelector('.error-message').innerHTML = message
     })
   </script>
 </body>

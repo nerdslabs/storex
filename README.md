@@ -2,11 +2,29 @@
 
 ![Elixir CI](https://github.com/nerdslabs/storex/workflows/Elixir%20CI/badge.svg) [![Downloads](https://img.shields.io/hexpm/dt/storex.svg)](https://hex.pm/packages/storex)
 
-Frontend store with the state on the backend. You are able to mutate store state from the frontend and also from the backend. Whole communication going through WebSocket.
+Storex is a frontend store with state management handled on the backend. It allows you to update the store state both from the frontend and backend, with all communication occurring over WebSocket.
 
-**Important:** Storex is under active development. Report issues and send proposals [here](https://github.com/nerdslabs/storex/issues/new).
+Important: Storex is currently under active development. We encourage you to report any issues or submit feature requests [here](https://github.com/nerdslabs/storex/issues/new).
 
-Only diff of the store state is being sent on each mutation.
+## Why Storex?
+
+### Features
+
+- Efficient state management: Only the differences (diffs) in the store state are sent with each mutation, minimizing data transfer.
+- Real-time updates: State changes are immediately reflected across all connected clients via WebSocket communication.
+- Backend-driven state: Storex allows both the frontend and backend to update the store state seamlessly.
+- Lightweight and fast: Designed for minimal overhead, ensuring rapid state updates and communication.
+
+### Key Differences from Phoenix LiveView
+
+Phoenix LiveView is a powerful tool for building rich, interactive web applications without writing custom JavaScript. However, as your application grows, managing complex client-side state across multiple LiveViews or components can become challenging. This is where Storex comes in.
+
+- Client-Side State Management: While Phoenix LiveView handles server-side rendering and event handling, Storex focuses on managing state on the client side. It allows you to keep your client-side state in sync with the server, but with more flexibility in how that state is stored, updated, and accessed.
+- Decoupled State Logic: Storex decouples state management from the LiveView itself, enabling you to manage state across multiple components or even across the entire application. This contrasts with LiveView, where state is typically tied to a specific LiveView process.
+- Predictable State Updates: Storex follows a predictable, unidirectional data flow similar to Redux. This makes it easier to reason about state changes and debug issues, especially in complex applications.
+- Extensibility: Storex is designed to be highly extensible, allowing you to integrate it with other tools and libraries in the Elixir ecosystem. You can also define custom middleware to handle side effects, logging, or other tasks.
+
+For an overview of Storex in action, check out the example provided [here](https://storex-phoenix-ssr-spring-sky-1412.fly.dev/).
 
 ## Basic usage
 
@@ -16,7 +34,7 @@ Add **storex** to deps in `mix.exs`:
 
 ```elixir
 defp deps do
-  [{:storex, "~> 0.4.0"}]
+  [{:storex, "~> 0.5.0"}]
 end
 ```
 
@@ -53,6 +71,9 @@ end
   ]}
 ])
 ```
+
+> [!IMPORTANT]
+> Cowboy doesn't support the Node.js (HTTP Only) connector
 
 ### Create store
 
@@ -95,24 +116,12 @@ end
 
 You have to connect the newly created store with a frontend side to be able to synchronise the state: `params` are passed as second argument in store `init/2` and as third in `mutation/5`. You can subscribe to changes inside store state by passing option `subscribe` with function as a value.
 
-```javascript
-import Storex from 'storex'
+```typescript
+import useStorex from 'storex'
 
-const store = new Storex({
+const store = useStorex({
   store: 'ExampleApp.Store.Counter',
-  params: {},
-  subscribe: (state) => {
-    console.log(state)
-  },
-  onConnected() {
-    console.log('connected')
-  },
-  onError(error) {
-    console.log('error', error)
-  },
-  onDisconnected(closeEvent) {
-    console.log('disconnected', closeEvent)
-  }
+  params: {}
 })
 ```
 
@@ -120,7 +129,7 @@ const store = new Storex({
 
 You can mutate store from javascript with store instance:
 
-```javascript
+```typescript
 store.commit("increase")
 store.commit("decrease").then((response) => {
   response // Reply from elixir
@@ -141,7 +150,7 @@ Storex.mutate(key, store, "set", [10])
 
 You can subscribe to store state changes in javascript with function subscribe:
 
-```javascript
+```typescript
 store.subscribe((state) => {
   const state = state
 })
@@ -149,7 +158,7 @@ store.subscribe((state) => {
 
 You can also subscribe to events after store is created:
 
-```javascript
+```typescript
 store.onConnected(() => {
   console.log('connected')
 })
@@ -163,6 +172,53 @@ store.onDisconnected((closeEvent) => {
 })
 ```
 
+## Connectors
+The default export of `useStorex` uses WebSocket connections only, you can extend it by using custom connector.
+
+### Websocket
+
+```typescript
+import { prepare, socketConnector } from 'storex';
+
+const connector = socketConnector({ address: 'wss://myapi.com/storex' });
+const { useStorex } = prepare({ /* global params */ }, connector);
+
+const myStore = useStorex<MyStateType>({
+  store: 'myStoreName',
+  params: { /* store-specific params */ }
+});
+```
+
+### Node.js (HTTP Only)
+
+**Node.js connector require Node.js installed on server which running application**
+
+```typescript
+import { prepare, httpConnector } from 'storex';
+
+const connector = httpConnector({ address: 'http://myapi.com/storex' });
+const { useStorex } = prepare({}, connector);
+
+const myStore = useStorex<MyStateType>({
+  store: 'myStoreName',
+  params: { /* store-specific params */ }
+});
+
+// Subscribe to state changes
+myStore.subscribe((state) => {
+  console.log('New state:', state);
+});
+
+// Handle errors
+myStore.onError((error) => {
+  console.error('An error occurred:', error);
+});
+```
+
+> [!IMPORTANT]
+> Mutations are not supported in HTTP mode
+> myStore.commit() will not work as expected
+
 ## Configuration
 
 ### Session id generation library
@@ -175,16 +231,18 @@ config :storex, :session_id_library, Ecto.UUID
 
 ### Default params
 
-You can set default params for all stores in Javascript which will be passed to store.
+You can set default params for all stores when preparing the Storex instance. These params will be passed to each store.
 
-```javascript
-Storex.defaults.params = {
-  jwt: 'someJWT'
-}
+```typescript
+const { useStorex } = prepare({ jwt: 'someJWT' }, connector);
 ```
 
 ### Custom store address
 
-```javascript
-Storex.defaults.address = 'localhost/stores'
+You can specify a custom address when creating the connector:
+
+```typescript
+const connector = socketConnector({ address: 'wss://myapi.com/storex' });
+// OR
+const connector = httpConnector({ address: 'http://myapi.com/storex' });
 ```
