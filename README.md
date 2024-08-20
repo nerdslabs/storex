@@ -24,6 +24,8 @@ Phoenix LiveView is a powerful tool for building rich, interactive web applicati
 - Predictable State Updates: Storex follows a predictable, unidirectional data flow similar to Redux. This makes it easier to reason about state changes and debug issues, especially in complex applications.
 - Extensibility: Storex is designed to be highly extensible, allowing you to integrate it with other tools and libraries in the Elixir ecosystem. You can also define custom middleware to handle side effects, logging, or other tasks.
 
+For an overview of Storex in action, check out the example provided [here](https://storex-phoenix-ssr-spring-sky-1412.fly.dev/).
+
 ## Basic usage
 
 ### Installation
