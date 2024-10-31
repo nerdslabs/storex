@@ -1,5 +1,9 @@
 # storex
 
+## 0.5.1
+
+- Fix frontend client type for `commit`
+
 ## 0.5.0
 
 - **[BREAKING]** Frontend client fully rewritten
