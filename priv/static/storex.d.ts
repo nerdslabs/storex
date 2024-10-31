@@ -10,11 +10,11 @@ type ResponseJoin<T> = {
     session: string;
     data: T;
 };
-type ResponseMutation = {
+type ResponseMutation<T> = {
     type: "mutation";
     store: string;
     session: string;
-    message?: string;
+    message?: T;
     diff: Change[];
 };
 type Connector = {
@@ -23,7 +23,7 @@ type Connector = {
     onDisconnected: (listener: (event: CloseEvent) => void) => void;
     connect: () => void;
     join: <T>(store: string, params: unknown) => Promise<ResponseJoin<T>>;
-    mutate: (store: string, session: string, name: string, data: unknown) => Promise<ResponseMutation>;
+    mutate: <T>(store: string, session: string, name: string, data: unknown) => Promise<ResponseMutation<T>>;
 };
 type ConnectorBuilder = (options: {
     address?: string;
@@ -42,7 +42,7 @@ type StoreConfig = {
 };
 declare const prepare: (params: Params, connector: Connector) => {
     useStorex: <T>(config: StoreConfig) => {
-        commit: (name: string, ...data: any) => Promise<string | undefined>;
+        commit: <R>(name: string, ...data: any) => Promise<R>;
         readonly state: T;
         readonly session: string;
         subscribe: (listener: (state: T) => void) => () => boolean;
@@ -52,7 +52,7 @@ declare const prepare: (params: Params, connector: Connector) => {
     };
 };
 declare const _default: <T>(config: StoreConfig) => {
-    commit: (name: string, ...data: any) => Promise<string | undefined>;
+    commit: <R>(name: string, ...data: any) => Promise<R>;
     readonly state: T;
     readonly session: string;
     subscribe: (listener: (state: T) => void) => () => boolean;
