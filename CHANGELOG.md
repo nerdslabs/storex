@@ -1,5 +1,10 @@
 # storex
 
+## 0.6.0
+
+- **[BREAKING]** Keys of params in Store are now type `binary` instead of `atom`
+- Added message validation with structured casting
+
 ## 0.5.1
 
 - Fix frontend client type for `commit`
