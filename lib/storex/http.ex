@@ -51,7 +51,7 @@ defmodule Storex.HTTP do
 
   defp get_params(params) do
     params
-    |> Jason.decode(keys: :atoms)
+    |> Jason.decode()
   end
 
   defp get_state(module, params) do

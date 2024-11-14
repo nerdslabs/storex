@@ -37,12 +37,11 @@ defmodule Storex.Handler.Cowboy do
   end
 
   def websocket_handle({:text, frame}, state) do
-    Jason.decode(frame, keys: :atoms)
-    |> case do
-      {:ok, message} ->
-        Socket.message_handle(message, state)
-        |> map_response()
-
+    with {:ok, decoded_message} <- Jason.decode(frame),
+         {:ok, cast_message} <- Storex.Message.cast(decoded_message) do
+      Socket.message_handle(cast_message, state)
+      |> map_response()
+    else
       {:error, _} ->
         {:reply, {:close, 1007, "Payload is malformed."}, state}
     end

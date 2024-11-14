@@ -2,7 +2,7 @@ defmodule Storex.Store do
   @doc """
   Called when store session starts.
   """
-  @callback init(session_id :: binary(), params :: any()) ::
+  @callback init(session_id :: binary(), params :: %{binary() => any()}) ::
               {:ok, state :: any()}
               | {:ok, state :: any(), key :: binary()}
               | {:error, reason :: binary()}
@@ -11,7 +11,7 @@ defmodule Storex.Store do
               name :: binary(),
               data :: any(),
               session_id :: binary(),
-              params :: any(),
+              params :: %{binary() => any()},
               state :: any()
             ) ::
               {:reply, message :: any(), state :: any()}
@@ -20,7 +20,7 @@ defmodule Storex.Store do
   @doc """
   Called when store session ends.
   """
-  @callback terminate(session_id :: binary(), params :: any(), state :: any()) :: any()
+  @callback terminate(session_id :: binary(), params :: %{binary() => any()}, state :: any()) :: any()
   @optional_callbacks terminate: 3
 
   defmacro __using__(_opts) do

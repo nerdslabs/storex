@@ -24,12 +24,11 @@ defmodule Storex.Handler.Plug do
   end
 
   def handle_in({message, [opcode: :text]}, state) do
-    Jason.decode(message, keys: :atoms)
-    |> case do
-      {:ok, message} ->
-        Socket.message_handle(message, state)
-        |> map_response()
-
+    with {:ok, decoded_message} <- Jason.decode(message),
+         {:ok, cast_message} <- Storex.Message.cast(decoded_message) do
+      Socket.message_handle(cast_message, state)
+      |> map_response()
+    else
       {:error, _} ->
         {:stop, "Payload is malformed.", 1007, state}
     end

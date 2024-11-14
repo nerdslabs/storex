@@ -1,4 +1,8 @@
 defmodule StorexTest.HandlerHelpers do
+  def random_string(length \\ 10) do
+    for _ <- 1..length, into: "", do: <<Enum.random(?a..?z)>>
+  end
+
   def connection_closed_for_reading?(client) do
     :gen_tcp.recv(client, 0) == {:error, :closed}
   end

@@ -15,6 +15,12 @@ defmodule StorexTest.Node do
     assert result == %{"error" => nil, "state" => %{"counter" => 0}}
   end
 
+  test "test params" do
+    result = run_store("StorexTest.Store.Text", %{"initial_value" => "custom_text"})
+
+    assert result == %{"error" => nil, "state" => "custom_text"}
+  end
+
   test "test error" do
     result = run_store("StorexTest.Store.ErrorInit")
 
