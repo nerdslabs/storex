@@ -89,9 +89,14 @@ Next, you can declare `mutation/5` where the first argument is mutation name, se
 defmodule ExampleApp.Store.Counter do
   use Storex.Store
 
-  def init(session_id, params) do
+  def init(session_id, _params) do
     {:ok, 0}
   end
+
+  # Params have binary keys and result of `init/2` function can return `key` which will be the key for mutations.
+  # def init(session_id, %{"someKey" => someKeyValue}) do
+  #   {:ok, 0, someKeyValue}
+  # end
 
   # `increase` is mutation name, `data` is payload from front-end, `session_id` is current session id of connecton, `initial_params` with which store was initialized, `state` is store current state.
   def mutation("increase", _data, _session_id, _initial_params, state) do
