@@ -26,7 +26,8 @@ defmodule StorexTest.Handler.Cowboy do
       {
         "type": "join",
         "store": "StorexTest.Store.Counter",
-        "data": {}
+        "data": {},
+        "request": "#{random_string()}"
       }
       """)
 
@@ -44,7 +45,8 @@ defmodule StorexTest.Handler.Cowboy do
       {
         "type": "join",
         "store": "StorexTest.Store.ErrorInit",
-        "data": {}
+        "data": {},
+        "request": "#{random_string()}"
       }
       """)
 
@@ -61,7 +63,8 @@ defmodule StorexTest.Handler.Cowboy do
       {
         "type": "join",
         "store": "StorexTest.Store.NotExisting",
-        "data": {}
+        "data": {},
+        "request": "#{random_string()}"
       }
       """)
 
@@ -79,7 +82,8 @@ defmodule StorexTest.Handler.Cowboy do
       {
         "type": "join",
         "store": null,
-        "data": {}
+        "data": {},
+        "request": "#{random_string()}"
       }
       """)
 
@@ -97,7 +101,8 @@ defmodule StorexTest.Handler.Cowboy do
       {
         "type": "join",
         "store": "StorexTest.Store.Counter",
-        "data": {}
+        "data": {},
+        "request": "#{random_string()}"
       }
       """)
 
@@ -113,7 +118,8 @@ defmodule StorexTest.Handler.Cowboy do
         "data": {
           "name": "increase",
           "data": []
-        }
+        },
+        "request": "#{random_string()}"
       }
       """)
 
@@ -135,7 +141,8 @@ defmodule StorexTest.Handler.Cowboy do
       {
         "type": "join",
         "store": "StorexTest.Store.Counter",
-        "data": {}
+        "data": {},
+        "request": "#{random_string()}"
       }
       """)
 
@@ -151,7 +158,8 @@ defmodule StorexTest.Handler.Cowboy do
         "data": {
           "name": "not_existing",
           "data": []
-        }
+        },
+        "request": "#{random_string()}"
       }
       """)
 
