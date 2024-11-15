@@ -1,5 +1,9 @@
 # storex
 
+## 0.6.1
+
+- Add missing `cast` to `Storex.Message`
+
 ## 0.6.0
 
 - **[BREAKING]** Keys of params in Store are now type `binary` instead of `atom`
