@@ -2,6 +2,10 @@ defmodule Storex.Message do
   @derive {Jason.Encoder, only: [:type, :store, :data, :request, :session]}
   defstruct [:type, :store, :data, :request, :session]
 
+  def cast(%{"type" => "ping", "request" => request}) do
+    {:ok, %__MODULE__{type: "ping", request: request}}
+  end
+
   def cast(%{
         "type" => "join",
         "store" => store,
