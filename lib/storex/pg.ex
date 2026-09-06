@@ -10,12 +10,12 @@ defmodule Storex.PG do
 
   @impl true
   def init(_) do
-    :ok = pg_join(@name)
+    :ok = :pg.join(Storex.PG, @name, self())
     {:ok, @name}
   end
 
   def broadcast(payload) do
-    pg_members(@name)
+    :pg.get_members(Storex.PG, @name)
     |> case do
       {:error, _} ->
         :error
@@ -50,28 +50,5 @@ defmodule Storex.PG do
   @impl true
   def handle_info(_, state) do
     {:noreply, state}
-  end
-
-  if Code.ensure_loaded?(:pg) do
-    defp pg_members(group) do
-      :pg.get_members(Storex.PG, group)
-    end
-  else
-    defp pg_members(group) do
-      :pg2.get_members({:storex, group})
-    end
-  end
-
-  if Code.ensure_loaded?(:pg) do
-    defp pg_join(group) do
-      :ok = :pg.join(Storex.PG, group, self())
-    end
-  else
-    defp pg_join(group) do
-      namespace = {:storex, group}
-      :ok = :pg2.create(namespace)
-      :ok = :pg2.join(namespace, self())
-      :ok
-    end
   end
 end
