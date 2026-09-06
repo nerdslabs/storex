@@ -41,6 +41,7 @@ jobs:
 
             { elixir: "1.20", otp: "27", os: "ubuntu-24.04" },
             { elixir: "1.20", otp: "28", os: "ubuntu-24.04" },
+            { elixir: "1.20", otp: "29", os: "ubuntu-24.04" },
           ]
     steps:
       - uses: actions/checkout@v4
