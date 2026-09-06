@@ -2,7 +2,6 @@ name: Elixir CI
 
 on:
   pull_request:
-    branches: [master]
   push:
     tags:
       - 0.*
