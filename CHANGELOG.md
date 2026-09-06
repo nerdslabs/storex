@@ -1,5 +1,9 @@
 # storex
 
+## 0.6.2
+
+- Fix type warnings emitted by `use Storex.Store` on Elixir 1.18 and newer
+
 ## 0.6.1
 
 - Add missing `cast` to `Storex.Message`
