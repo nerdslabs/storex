@@ -23,6 +23,56 @@ defmodule Storex.Store do
   @callback terminate(session_id :: binary(), params :: %{binary() => any()}, state :: any()) :: any()
   @optional_callbacks terminate: 3
 
+  @doc false
+  def __init__(store, session, params) do
+    apply(store, :init, [session, params])
+    |> case do
+      {:ok, state} ->
+        {:ok, state, nil}
+
+      {:ok, state, key} ->
+        {:ok, state, key}
+
+      {:error, reason} ->
+        {:error, reason}
+
+      _ ->
+        raise "Return value of store init should be {:ok, state}, {:ok, state, key} or {:error, reason}"
+    end
+  end
+
+  @doc false
+  def __mutation__(store, name, data, session, params, state) do
+    try do
+      apply(store, :mutation, [name, data, session, params, state])
+      |> case do
+        {:reply, message, result} ->
+          {:reply, message, result}
+
+        {:noreply, result} ->
+          {:noreply, result}
+
+        {:error, error} ->
+          {:error, error}
+
+        _ ->
+          {:error,
+           "Return value of mutation should be {:reply, message, state}, {:noreply, state} or {:error, error}"}
+      end
+    rescue
+      FunctionClauseError ->
+        {:error,
+         "No mutation matching #{inspect(name)} with data #{inspect(data)} in store #{inspect(store)}"}
+    end
+  end
+
+  @doc false
+  def __terminate__(store, session, params, state) do
+    if :erlang.function_exported(store, :terminate, 3) do
+      apply(store, :terminate, [session, params, state])
+    end
+  end
+
   defmacro __using__(_opts) do
     quote do
       @behaviour Storex.Store
@@ -59,42 +109,26 @@ defmodule Storex.Store do
         end
 
         def handle_cast(:session_ended, state) do
-          if :erlang.function_exported(@store, :terminate, 3) do
-            Kernel.apply(@store, :terminate, [state.session, state.params, state.state])
-          end
+          Storex.Store.__terminate__(@store, state.session, state.params, state.state)
 
           {:stop, :normal, state}
         end
 
         def handle_call({name, data}, _, state) do
-          try do
-            Kernel.apply(@store, :mutation, [name, data, state.session, state.params, state.state])
-            |> case do
-              {:reply, message, result} ->
-                diff = Storex.Diff.check(state.state, result)
-                state = Map.put(state, :state, result)
-                {:reply, {:ok, message, diff}, state}
+          Storex.Store.__mutation__(@store, name, data, state.session, state.params, state.state)
+          |> case do
+            {:reply, message, result} ->
+              diff = Storex.Diff.check(state.state, result)
+              state = Map.put(state, :state, result)
+              {:reply, {:ok, message, diff}, state}
 
-              {:noreply, result} ->
-                diff = Storex.Diff.check(state.state, result)
-                state = Map.put(state, :state, result)
-                {:reply, {:ok, diff}, state}
+            {:noreply, result} ->
+              diff = Storex.Diff.check(state.state, result)
+              state = Map.put(state, :state, result)
+              {:reply, {:ok, diff}, state}
 
-              {:error, error} ->
-                {:reply, {:error, error}, state}
-
-              _ ->
-                {:reply,
-                 {:error,
-                  "Return value of mutation should be {:reply, message, state}, {:noreply, state} or {:error, error}"},
-                 state}
-            end
-          rescue
-            e in FunctionClauseError ->
-              {:reply,
-               {:error,
-                "No mutation matching #{inspect(name)} with data #{inspect(data)} in store #{inspect(@store)}"},
-               state}
+            {:error, error} ->
+              {:reply, {:error, error}, state}
           end
         end
 
@@ -103,20 +137,7 @@ defmodule Storex.Store do
         end
 
         defp init_store(session, params) do
-          @store.init(session, params)
-          |> case do
-            {:ok, state} ->
-              {:ok, state, nil}
-
-            {:ok, state, key} ->
-              {:ok, state, key}
-
-            {:error, reason} ->
-              {:error, reason}
-
-            _ ->
-              raise "Return value of store init should be {:ok, state}, {:ok, state, key} or {:error, reason}"
-          end
+          Storex.Store.__init__(@store, session, params)
         end
       end
     end
