@@ -43,6 +43,18 @@ defmodule StorexTest.Diff do
     assert Enum.member?(diff, %{a: "u", p: [:age], t: 10})
   end
 
+  test "diff struct against a plain map" do
+    diff = Storex.Diff.check(%Struct{name: "A", age: 1}, %{name: "B", age: 1})
+
+    assert diff == [%{a: "u", p: [:name], t: "B"}]
+  end
+
+  test "diff plain map against a struct" do
+    diff = Storex.Diff.check(%{name: "A", age: 1}, %Struct{name: "B", age: 1})
+
+    assert diff == [%{a: "u", p: [:name], t: "B"}]
+  end
+
   test "diff DateTime" do
     assert [%{a: "u", p: [], t: "2000-02-29 23:10:00+01:00 CET Europe/Warsaw"}] =
              Storex.Diff.check(

@@ -6,6 +6,7 @@ defmodule StorexTest.StoreTest do
   alias StorexTest.Store.InvalidInit
   alias StorexTest.Store.InvalidMutation
   alias StorexTest.Store.KeyInit
+  alias StorexTest.Store.Terminating
   alias StorexTest.Store.Text
 
   describe "resolve/1" do
@@ -102,6 +103,22 @@ defmodule StorexTest.StoreTest do
     end
   end
 
+  describe "terminate dispatch" do
+    test "the callback is invoked with the session, params and state" do
+      params = %{"reporter" => self()}
+
+      assert Storex.Store.__terminate__(Terminating, "session", params, %{counter: 3}) ==
+               {:terminated, "session", params, %{counter: 3}}
+
+      assert_received {:terminated, "session", ^params, %{counter: 3}}
+    end
+
+    test "a store that does not implement it is a no-op" do
+      refute function_exported?(Counter, :terminate, 3)
+      assert Storex.Store.__terminate__(Counter, "session", %{}, %{counter: 0}) == nil
+    end
+  end
+
   describe "store server" do
     setup do
       session = "session-#{System.unique_integer([:positive])}"
@@ -130,6 +147,18 @@ defmodule StorexTest.StoreTest do
     test "does not start a store returning {:error, reason}", %{session: session} do
       assert {:error, "Unauthorized"} =
                Storex.Supervisor.add_store("StorexTest.Store.ErrorInit", session, self(), %{})
+    end
+
+    test "stopping a store runs terminate/3 with the current state", %{session: session} do
+      store = "StorexTest.Store.Terminating"
+      params = %{"reporter" => self()}
+
+      {:ok, _} = Storex.Supervisor.add_store(store, session, self(), params)
+      {:ok, _} = Storex.Supervisor.mutate_store(session, store, "increase", [])
+
+      Storex.Supervisor.remove_store(session, store)
+
+      assert_receive {:terminated, ^session, ^params, %{counter: 1}}, 1000
     end
 
     test "mutating through the server returns the state diff", %{session: session} do

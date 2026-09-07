@@ -109,8 +109,11 @@ defmodule Storex.Store do
   end
 
   @doc false
+  # `function_exported?/3` answers `false` for a module that is not loaded yet,
+  # so the callback would be skipped silently. `ensure_loaded?/1` first makes the
+  # answer depend on the store, not on what the code server happens to hold.
   def __terminate__(store, session, params, state) do
-    if :erlang.function_exported(store, :terminate, 3) do
+    if Code.ensure_loaded?(store) and function_exported?(store, :terminate, 3) do
       apply(store, :terminate, [session, params, state])
     end
   end

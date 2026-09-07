@@ -3,6 +3,17 @@ defmodule StorexTest.RegistryTest do
 
   @registry :storex_registry
 
+  defp eventually(check, attempts \\ 100) do
+    Enum.reduce_while(1..attempts, false, fn _, _ ->
+      if check.() do
+        {:halt, true}
+      else
+        Process.sleep(10)
+        {:cont, false}
+      end
+    end)
+  end
+
   setup do
     session = "session-#{System.unique_integer([:positive])}"
     {:ok, _} = Storex.Registry.register_store("Store", self(), session, self(), "key")
@@ -35,6 +46,31 @@ defmodule StorexTest.RegistryTest do
   test "a miss is :undefined", %{session: session} do
     assert Storex.Registry.get_store("Never.Joined", session) == :undefined
     assert Storex.Registry.get_store_pid("Never.Joined", session) == :undefined
+  end
+
+  test "a row is dropped when the store process dies" do
+    session = "session-#{System.unique_integer([:positive])}"
+    store_pid = spawn(fn -> Process.sleep(:infinity) end)
+
+    {:ok, _} = Storex.Registry.register_store("Dying", store_pid, session, self(), nil)
+    assert Storex.Registry.get_store_pid("Dying", session) == store_pid
+
+    Process.exit(store_pid, :kill)
+
+    # The registry monitors the store, so the row goes when the process does.
+    assert eventually(fn -> Storex.Registry.get_store_pid("Dying", session) == :undefined end)
+    assert Storex.Registry.session_stores(session) == []
+  end
+
+  test "only the dead process's rows are dropped", %{session: session} do
+    other = "session-#{System.unique_integer([:positive])}"
+    store_pid = spawn(fn -> Process.sleep(:infinity) end)
+
+    {:ok, _} = Storex.Registry.register_store("Dying", store_pid, other, self(), nil)
+    Process.exit(store_pid, :kill)
+
+    assert eventually(fn -> Storex.Registry.get_store_pid("Dying", other) == :undefined end)
+    assert Storex.Registry.get_store_pid("Store", session) == self()
   end
 
   test "reads do not go through the registry process", %{session: session} do

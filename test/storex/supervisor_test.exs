@@ -32,6 +32,27 @@ defmodule StorexTest.SupervisorTest do
       assert atoms_after - atoms_before == 0
     end
 
+    test "joining a store twice reuses the running one", %{} do
+      session = start_store(session())
+      pid = Storex.Registry.get_store_pid(@store, session)
+
+      # The second add_store/4 takes the registry branch and starts nothing.
+      assert {:ok, nil} = Storex.Supervisor.add_store(@store, session, self(), %{})
+
+      assert Storex.Registry.get_store_pid(@store, session) == pid
+      assert length(Storex.Registry.session_stores(session)) == 1
+    end
+
+    test "joining a store twice returns the key from the first join" do
+      store = "StorexTest.Store.KeyInit"
+      session = session()
+
+      assert {:ok, "user_id"} = Storex.Supervisor.add_store(store, session, self(), %{})
+      assert {:ok, "user_id"} = Storex.Supervisor.add_store(store, session, self(), %{})
+
+      on_exit(fn -> Storex.Supervisor.remove_store(session, store) end)
+    end
+
     test "the same session and store cannot be started twice" do
       session = start_store(session())
 

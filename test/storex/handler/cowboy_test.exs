@@ -225,6 +225,71 @@ defmodule StorexTest.Handler.Cowboy do
     end
   end
 
+  describe "keepalive" do
+    test "a ping is answered with a pong carrying the same request id", context do
+      client = tcp_client(context)
+      http1_handshake(client)
+
+      request = random_string()
+
+      send_text_frame(client, """
+      {
+        "type": "ping",
+        "request": "#{request}"
+      }
+      """)
+
+      {:ok, result} = recv_text_frame(client)
+
+      assert %{type: "pong", request: ^request} = Jason.decode!(result, keys: :atoms)
+    end
+
+    test "a ping does not need a store to be joined", context do
+      client = tcp_client(context)
+      http1_handshake(client)
+
+      send_text_frame(client, ~s({"type": "ping", "request": "#{random_string()}"}))
+
+      assert {:ok, _} = recv_text_frame(client)
+    end
+  end
+
+  describe "session cleanup" do
+    test "closing the connection stops the session's stores", context do
+      client = tcp_client(context)
+      http1_handshake(client)
+
+      send_text_frame(client, """
+      {
+        "type": "join",
+        "store": "StorexTest.Store.Counter",
+        "data": {},
+        "request": "#{random_string()}"
+      }
+      """)
+
+      {:ok, result} = recv_text_frame(client)
+      assert %{session: session} = Jason.decode!(result, keys: :atoms)
+
+      store_pid = Storex.Registry.get_store_pid("StorexTest.Store.Counter", session)
+      assert is_pid(store_pid)
+
+      :gen_tcp.close(client)
+
+      assert Enum.reduce_while(1..200, false, fn _, _ ->
+               if Storex.Registry.session_stores(session) == [] do
+                 {:halt, true}
+               else
+                 Process.sleep(10)
+                 {:cont, false}
+               end
+             end),
+             "the session's registry rows were not cleaned up"
+
+      refute Process.alive?(store_pid)
+    end
+  end
+
   # Simple WebSocket client
 
   def tcp_client(context) do
