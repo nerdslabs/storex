@@ -49,6 +49,11 @@ defmodule StorexTest.SupervisorTest do
       assert pid == Storex.Registry.get_store_pid(@store, session)
     end
 
+    test "mutating a store that was never started returns an error" do
+      assert Storex.Supervisor.mutate_store(session(), @store, "increase", []) ==
+               {:error, "Store 'StorexTest.Store.Counter' is not joined in this session."}
+    end
+
     test "the name is released when the store stops" do
       session = start_store(session())
 

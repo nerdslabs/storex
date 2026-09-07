@@ -64,7 +64,13 @@ defmodule Storex.Supervisor do
 
   def mutate_store(session, store, name, data) do
     Storex.Registry.get_store_pid(store, session)
-    |> GenServer.call({name, data})
+    |> case do
+      :undefined ->
+        {:error, "Store '#{store}' is not joined in this session."}
+
+      pid ->
+        GenServer.call(pid, {name, data})
+    end
   end
 
   def remove_store(session, store) do
