@@ -166,4 +166,14 @@ defmodule StorexTest do
       assert {:error, "Unauthorized"} = Storex.Supervisor.add_store(store, session, self(), %{})
     end
   end
+
+  describe "mutate return value" do
+    test "mutate/3 returns :ok" do
+      assert Storex.mutate("StorexTest.Store.Counter", "increase", []) == :ok
+    end
+
+    test "mutate/4 returns :ok" do
+      assert Storex.mutate("key", "StorexTest.Store.Counter", "increase", []) == :ok
+    end
+  end
 end
