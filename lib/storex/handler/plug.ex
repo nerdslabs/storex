@@ -30,7 +30,7 @@ defmodule Storex.Handler.Plug do
       |> map_response()
     else
       {:error, _} ->
-        {:stop, "Payload is malformed.", 1007, state}
+        {:stop, :normal, {1007, "Payload is malformed."}, state}
     end
   end
 

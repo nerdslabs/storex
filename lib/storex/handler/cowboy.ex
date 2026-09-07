@@ -9,10 +9,6 @@ defmodule Storex.Handler.Cowboy do
     {:cowboy_websocket, request, %{session: session, pid: request.pid}}
   end
 
-  def websocket_init(_type, req, _opts) do
-    {:ok, req, %{status: "inactive"}}
-  end
-
   def terminate(_reason, _req, %{session: session}) do
     Storex.Registry.session_stores(session)
     |> Enum.each(fn {store, _, session, _, _} ->

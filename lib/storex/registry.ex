@@ -15,10 +15,6 @@ defmodule Storex.Registry do
     {:ok, %{}}
   end
 
-  def session_pid(session) do
-    GenServer.call(@registry, {:session_pid, session})
-  end
-
   def register_store(store, store_pid, session, session_pid, key) do
     GenServer.call(@registry, {:register_store, store, store_pid, session, session_pid, key})
   end
@@ -41,14 +37,6 @@ defmodule Storex.Registry do
 
   def session_stores(session) do
     GenServer.call(@registry, {:session_stores, session})
-  end
-
-  def handle_call({:session_pid, session}, _from, state) do
-    :ets.match(@registry, {:_, session, :_, :"$1"})
-    |> case do
-      [] -> {:reply, :undefined, state}
-      [[pid] | _tail] -> {:reply, pid, state}
-    end
   end
 
   def handle_call({:register_store, store, store_pid, session, session_pid, key}, _from, state) do
@@ -90,9 +78,9 @@ defmodule Storex.Registry do
     {:reply, stores, state}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, _state) do
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
     :ets.match_delete(@registry, {:_, pid, :_, :_, :_})
 
-    {:noreply, :ok}
+    {:noreply, state}
   end
 end

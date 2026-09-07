@@ -174,6 +174,28 @@ defmodule StorexTest.Handler.Cowboy do
     end
   end
 
+  describe "unknown message types" do
+    test "an error frame is refused with 1007", context do
+      client = tcp_client(context)
+      http1_handshake(client)
+
+      # `error` frames only travel server to client. This one used to pass
+      # `Storex.Message.cast/1` and then crash `message_handle/2`.
+      send_text_frame(client, """
+      {
+        "type": "error",
+        "store": "StorexTest.Store.Counter",
+        "data": null,
+        "request": "#{random_string()}",
+        "session": "#{random_string()}"
+      }
+      """)
+
+      assert recv_connection_close_frame(client) ==
+               {:ok, <<1007::16, "Payload is malformed."::binary>>}
+    end
+  end
+
   describe "binary frames" do
     test "are rejected with 1003", context do
       client = tcp_client(context)
