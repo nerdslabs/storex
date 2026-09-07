@@ -34,6 +34,12 @@ defmodule Storex.Handler.Plug do
     end
   end
 
+  # See the note in `Storex.Handler.Cowboy`. Without this clause a binary frame
+  # raises `FunctionClauseError` here and takes the connection down with a 1011.
+  def handle_in({_message, [opcode: :binary]}, state) do
+    {:stop, :normal, {1003, "Binary frames are not supported."}, state}
+  end
+
   def handle_info({:mutate, store, mutation, data}, %{session: session} = state) do
     %{
       type: "mutation",

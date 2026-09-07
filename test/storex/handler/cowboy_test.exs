@@ -174,6 +174,35 @@ defmodule StorexTest.Handler.Cowboy do
     end
   end
 
+  describe "binary frames" do
+    test "are rejected with 1003", context do
+      client = tcp_client(context)
+      http1_handshake(client)
+
+      send_binary_frame(client, :erlang.term_to_binary(%{type: "ping", request: "r"}))
+
+      assert recv_connection_close_frame(client) ==
+               {:ok, <<1003::16, "Binary frames are not supported."::binary>>}
+    end
+
+    test "cannot create atoms", context do
+      client = tcp_client(context)
+      http1_handshake(client)
+
+      name = "storex_binary_frame_probe_#{System.unique_integer([:positive])}"
+
+      # External term format for an atom that does not exist in this VM yet. It
+      # is built by hand because `:erlang.term_to_binary/1` would create the atom
+      # here first, in the test process.
+      send_binary_frame(client, <<131, 118, byte_size(name)::16, name::binary>>)
+
+      assert recv_connection_close_frame(client) ==
+               {:ok, <<1003::16, "Binary frames are not supported."::binary>>}
+
+      assert_raise ArgumentError, fn -> String.to_existing_atom(name) end
+    end
+  end
+
   # Simple WebSocket client
 
   def tcp_client(context) do

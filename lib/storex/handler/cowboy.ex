@@ -26,14 +26,13 @@ defmodule Storex.Handler.Cowboy do
     :ok
   end
 
-  def websocket_handle({:binary, frame}, state) do
-    try do
-      :erlang.binary_to_term(frame)
-      |> Socket.message_handle(state)
-      |> map_response()
-    rescue
-      ArgumentError -> {:reply, {:close, 1007, "Payload is malformed."}, state}
-    end
+  # Binary frames are not part of the protocol: the client only ever sends text.
+  # They used to be decoded with `:erlang.binary_to_term/1`, which creates atoms
+  # out of bytes the client controls and handed the resulting term straight to
+  # `Storex.Socket.message_handle/2`, bypassing the `Storex.Message.cast/1`
+  # allowlist that every other entry point goes through.
+  def websocket_handle({:binary, _frame}, state) do
+    {:reply, {:close, 1003, "Binary frames are not supported."}, state}
   end
 
   def websocket_handle({:text, frame}, state) do
