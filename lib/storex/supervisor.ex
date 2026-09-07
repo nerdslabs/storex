@@ -15,8 +15,18 @@ defmodule Storex.Supervisor do
     )
   end
 
+  @doc false
+  # The name a store process registers under. It is deliberately a `:via` tuple
+  # and not an atom: session ids are unique per connection, so naming processes
+  # `:"#{session}_#{store}"` created one permanent atom per session-store pair
+  # and eventually exhausted the atom table on a long-running node.
+  #
+  # Nothing looks a store up by this name — `Storex.Registry` maps to the pid
+  # for that. It exists so that starting the same `{session, store}` twice
+  # fails with `{:error, {:already_started, pid}}` instead of silently
+  # producing a second process.
   def name(session, store) do
-    String.to_atom("#{session}_#{store}")
+    {:via, Registry, {Storex.StoreRegistry, {session, store}}}
   end
 
   def add_store(store, session, session_pid, params \\ %{}) do

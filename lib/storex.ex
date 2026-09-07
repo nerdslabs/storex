@@ -9,6 +9,7 @@ defmodule Storex do
       %{id: :pg, start: {:pg, :start_link, [Storex.PG]}},
       {Storex.PG, []},
       {Storex.Registry, []},
+      {Registry, keys: :unique, name: Storex.StoreRegistry},
       {Storex.Supervisor, []}
     ]
 
