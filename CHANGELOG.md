@@ -4,6 +4,7 @@
 
 - **[BREAKING]** Updated the minimum required version of Elixir to `1.16`
 - Fix type warnings emitted by `use Storex.Store` on Elixir 1.18 and newer
+- **[BREAKING]** A `FunctionClauseError` raised inside a mutation that *did* match is no longer reported to the client as `No mutation matching ...`. Only the store's own `mutation/5` failing to match produces that error; anything else propagates with its original stacktrace, which stops the store process and the socket with it
 - Removed the `:pg2` fallback, unreachable since OTP 24
 - Updated dependencies
 

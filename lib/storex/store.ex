@@ -60,10 +60,21 @@ defmodule Storex.Store do
            "Return value of mutation should be {:reply, message, state}, {:noreply, state} or {:error, error}"}
       end
     rescue
-      FunctionClauseError ->
-        {:error,
-         "No mutation matching #{inspect(name)} with data #{inspect(data)} in store #{inspect(store)}"}
+      error in FunctionClauseError ->
+        if unmatched_mutation?(error, store) do
+          {:error,
+           "No mutation matching #{inspect(name)} with data #{inspect(data)} in store #{inspect(store)}"}
+        else
+          reraise error, __STACKTRACE__
+        end
     end
+  end
+
+  # Only the store's own `mutation/5` failing to match means "no such mutation".
+  # Any other `FunctionClauseError` was raised deeper inside a mutation that did
+  # match, and has to keep its original stacktrace.
+  defp unmatched_mutation?(%FunctionClauseError{} = error, store) do
+    error.module == store and error.function == :mutation and error.arity == 5
   end
 
   @doc false

@@ -60,6 +60,27 @@ defmodule StorexTest.StoreTest do
                {:error,
                 "No mutation matching \"unknown\" with data [1] in store StorexTest.Store.Counter"}
     end
+
+    test "a FunctionClauseError raised inside a matching mutation is not swallowed" do
+      error =
+        assert_raise FunctionClauseError, fn ->
+          Storex.Store.__mutation__(InvalidMutation, "raise", 1, "session", %{}, %{})
+        end
+
+      assert error.function == :only_zero
+      assert error.arity == 1
+    end
+
+    test "the original stacktrace of a raise inside a mutation is preserved" do
+      stacktrace =
+        try do
+          Storex.Store.__mutation__(InvalidMutation, "raise", 1, "session", %{}, %{})
+        rescue
+          _ -> __STACKTRACE__
+        end
+
+      assert [{InvalidMutation, :only_zero, [1], _location} | _rest] = stacktrace
+    end
   end
 
   describe "store server" do
