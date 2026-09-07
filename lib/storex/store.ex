@@ -20,7 +20,8 @@ defmodule Storex.Store do
   @doc """
   Called when store session ends.
   """
-  @callback terminate(session_id :: binary(), params :: %{binary() => any()}, state :: any()) :: any()
+  @callback terminate(session_id :: binary(), params :: %{binary() => any()}, state :: any()) ::
+              any()
   @optional_callbacks terminate: 3
 
   @doc false

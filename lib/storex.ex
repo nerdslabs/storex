@@ -3,8 +3,6 @@ defmodule Storex do
 
   @doc false
   def start(_type, _args) do
-    import Supervisor.Spec, warn: false
-
     children = [
       %{id: :pg, start: {:pg, :start_link, [Storex.PG]}},
       {Storex.PG, []},
