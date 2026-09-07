@@ -8,6 +8,25 @@ defmodule StorexTest.StoreTest do
   alias StorexTest.Store.KeyInit
   alias StorexTest.Store.Text
 
+  describe "resolve/1" do
+    test "resolves a module that declares the behaviour" do
+      assert Storex.Store.resolve("StorexTest.Store.Counter") == {:ok, Counter}
+    end
+
+    test "refuses a module that does not declare the behaviour" do
+      assert Storex.Store.resolve("StorexTest.NotAStore") == {:error, :not_store}
+    end
+
+    test "refuses a name that does not resolve to a module" do
+      assert Storex.Store.resolve("StorexTest.Store.NotExisting") == {:error, :not_exists}
+    end
+
+    test "refuses a name that is not an existing atom" do
+      assert Storex.Store.resolve("Never.Compiled.#{System.unique_integer([:positive])}") ==
+               {:error, :not_exists}
+    end
+  end
+
   describe "init dispatch" do
     test "{:ok, state} is normalized with a nil key" do
       assert Storex.Store.__init__(Counter, "session", %{}) == {:ok, %{counter: 0}, nil}

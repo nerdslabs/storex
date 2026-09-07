@@ -24,6 +24,36 @@ defmodule Storex.Store do
   @optional_callbacks terminate: 3
 
   @doc false
+  # Resolves the store module from the name a client sent. All three checks
+  # belong together: `Module.safe_concat/1` refuses to create new atoms,
+  # `Code.ensure_compiled/1` refuses names that do not resolve to a real module,
+  # and the behaviour check refuses modules that are not stores. Dropping any of
+  # them lets client input reach arbitrary modules, which is what the SSR path
+  # did for as long as it carried its own copy of only the first check.
+  def resolve(store) do
+    with {:ok, module} <- safe_concat(store),
+         {:module, module} <- Code.ensure_compiled(module),
+         true <- storex_store?(module) do
+      {:ok, module}
+    else
+      false -> {:error, :not_store}
+      _ -> {:error, :not_exists}
+    end
+  end
+
+  defp safe_concat(store) do
+    {:ok, Module.safe_concat([store])}
+  rescue
+    ArgumentError -> {:error, :not_exists}
+  end
+
+  defp storex_store?(module) do
+    __MODULE__ in (module.module_info(:attributes)
+                   |> Keyword.get_values(:behaviour)
+                   |> List.flatten())
+  end
+
+  @doc false
   def __init__(store, session, params) do
     apply(store, :init, [session, params])
     |> case do

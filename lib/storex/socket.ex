@@ -21,7 +21,7 @@ defmodule Storex.Socket do
   end
 
   def message_handle(%{type: "join"} = message, state) do
-    with {:get_module, {:ok, _}} <- {:get_module, get_store_module(message.store)},
+    with {:get_module, {:ok, _}} <- {:get_module, Storex.Store.resolve(message.store)},
          {:add_store, {:ok, _}} <-
            {:add_store,
             Storex.Supervisor.add_store(message.store, state.session, state.pid, message.data)} do
@@ -93,28 +93,5 @@ defmodule Storex.Socket do
     end
     |> Jason.encode!()
     |> (&{:text, &1, state}).()
-  end
-
-  defp safe_concat(store) do
-    try do
-      module = Module.safe_concat([store])
-      {:ok, module}
-    rescue
-      ArgumentError -> {:error, :not_exists}
-    end
-  end
-
-  defp get_store_module(store) do
-    with {:ok, module} <- safe_concat(store),
-         {:module, module} <- Code.ensure_compiled(module),
-         true <-
-           Storex.Store in (module.module_info(:attributes)
-                            |> Keyword.get_values(:behaviour)
-                            |> List.flatten()) do
-      {:ok, module}
-    else
-      false -> {:error, :not_store}
-      _ -> {:error, :not_exists}
-    end
   end
 end
