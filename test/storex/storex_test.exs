@@ -53,7 +53,7 @@ defmodule StorexTest do
 
     test "get store", %{session: session, store: store, pid: pid} do
       assert {:ok, _pid} = Storex.Supervisor.add_store(store, session, pid, %{})
-      assert %{counter: 0} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 0}} = Storex.Supervisor.get_store_state(session, store)
       Storex.Supervisor.remove_store(session, store)
     end
 
@@ -64,7 +64,7 @@ defmodule StorexTest do
 
       assert_receive :ok
 
-      assert %{counter: 1} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 1}} = Storex.Supervisor.get_store_state(session, store)
     end
 
     test "mutate store in cluster", %{session: session, store: store, pid: pid} do
@@ -83,7 +83,7 @@ defmodule StorexTest do
 
       assert_receive :ok
 
-      assert %{counter: 1} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 1}} = Storex.Supervisor.get_store_state(session, store)
     end
   end
 
@@ -117,7 +117,7 @@ defmodule StorexTest do
 
       assert_receive :ok
 
-      assert %{counter: 1} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 1}} = Storex.Supervisor.get_store_state(session, store)
     end
 
     test "don't mutate store for invalid key", %{session: session, store: store, pid: pid} do
@@ -127,7 +127,7 @@ defmodule StorexTest do
 
       refute_receive :ok
 
-      assert %{counter: 0} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 0}} = Storex.Supervisor.get_store_state(session, store)
     end
 
     test "don't mutate store for invalid key in cluster", %{
@@ -150,7 +150,7 @@ defmodule StorexTest do
 
       refute_receive :ok
 
-      assert %{counter: 0} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 0}} = Storex.Supervisor.get_store_state(session, store)
     end
   end
 

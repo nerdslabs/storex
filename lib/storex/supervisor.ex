@@ -56,10 +56,18 @@ defmodule Storex.Supervisor do
     end
   end
 
+  # `:sys.get_state/1` is a debug function, and using it here meant reading the
+  # generated `Server`'s internal state shape from the outside, on the join path.
+  # The process answers for its own state instead.
   def get_store_state(session, store) do
     Storex.Registry.get_store_pid(store, session)
-    |> :sys.get_state()
-    |> Map.get(:state)
+    |> case do
+      :undefined ->
+        {:error, "Store '#{store}' is not joined in this session."}
+
+      pid ->
+        {:ok, GenServer.call(pid, :get_state)}
+    end
   end
 
   def mutate_store(session, store, name, data) do

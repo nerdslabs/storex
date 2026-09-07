@@ -24,9 +24,9 @@ defmodule Storex.Socket do
     with {:get_module, {:ok, _}} <- {:get_module, Storex.Store.resolve(message.store)},
          {:add_store, {:ok, _}} <-
            {:add_store,
-            Storex.Supervisor.add_store(message.store, state.session, state.pid, message.data)} do
-      store_state = Storex.Supervisor.get_store_state(state.session, message.store)
-
+            Storex.Supervisor.add_store(message.store, state.session, state.pid, message.data)},
+         {:store_state, {:ok, store_state}} <-
+           {:store_state, Storex.Supervisor.get_store_state(state.session, message.store)} do
       message =
         Map.put(message, :data, store_state)
         |> Map.put(:session, state.session)
@@ -34,7 +34,7 @@ defmodule Storex.Socket do
 
       {:text, message, state}
     else
-      {:add_store, {:error, error_message}} ->
+      {step, {:error, error_message}} when step in [:add_store, :store_state] ->
         %{
           type: "error",
           session: state.session,

@@ -33,8 +33,8 @@ defmodule StorexTest.SocketTest do
 
       assert {:text, response, ^state} = Storex.Socket.message_handle(message, state)
 
-      assert Storex.Supervisor.get_store_state(victim, @store) == %{counter: 0}
-      assert Storex.Supervisor.get_store_state(attacker, @store) == %{counter: 1}
+      assert Storex.Supervisor.get_store_state(victim, @store) == {:ok, %{counter: 0}}
+      assert Storex.Supervisor.get_store_state(attacker, @store) == {:ok, %{counter: 1}}
 
       assert %{"session" => ^attacker, "diff" => [%{"p" => ["counter"], "t" => 1}]} =
                Jason.decode!(response)

@@ -49,6 +49,19 @@ defmodule StorexTest.SupervisorTest do
       assert pid == Storex.Registry.get_store_pid(@store, session)
     end
 
+    test "reading the state of a store that was never started returns an error" do
+      assert Storex.Supervisor.get_store_state(session(), @store) ==
+               {:error, "Store 'StorexTest.Store.Counter' is not joined in this session."}
+    end
+
+    test "the store answers for its own state, without :sys.get_state/1" do
+      session = start_store(session())
+      pid = Storex.Registry.get_store_pid(@store, session)
+
+      assert GenServer.call(pid, :get_state) == %{counter: 0}
+      assert Storex.Supervisor.get_store_state(session, @store) == {:ok, %{counter: 0}}
+    end
+
     test "mutating a store that was never started returns an error" do
       assert Storex.Supervisor.mutate_store(session(), @store, "increase", []) ==
                {:error, "Store 'StorexTest.Store.Counter' is not joined in this session."}

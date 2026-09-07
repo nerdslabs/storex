@@ -118,9 +118,8 @@ defmodule StorexTest.StoreTest do
       assert {:ok, nil} =
                Storex.Supervisor.add_store("StorexTest.Store.Counter", session, self(), %{})
 
-      assert Storex.Supervisor.get_store_state(session, "StorexTest.Store.Counter") == %{
-               counter: 0
-             }
+      assert Storex.Supervisor.get_store_state(session, "StorexTest.Store.Counter") ==
+               {:ok, %{counter: 0}}
     end
 
     test "starts a store returning {:ok, state, key}", %{session: session} do

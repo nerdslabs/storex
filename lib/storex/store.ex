@@ -155,6 +155,10 @@ defmodule Storex.Store do
           {:stop, :normal, state}
         end
 
+        def handle_call(:get_state, _, state) do
+          {:reply, state.state, state}
+        end
+
         def handle_call({name, data}, _, state) do
           Storex.Store.__mutation__(@store, name, data, state.session, state.params, state.state)
           |> case do
