@@ -5,25 +5,14 @@ defmodule Storex do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
-    children =
-      pg_children() ++
-        [
-          {Storex.PG, []},
-          {Storex.Registry, []},
-          {Storex.Supervisor, []}
-        ]
+    children = [
+      %{id: :pg, start: {:pg, :start_link, [Storex.PG]}},
+      {Storex.PG, []},
+      {Storex.Registry, []},
+      {Storex.Supervisor, []}
+    ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: __MODULE__)
-  end
-
-  if Code.ensure_loaded?(:pg) do
-    defp pg_children() do
-      [%{id: :pg, start: {:pg, :start_link, [Storex.PG]}}]
-    end
-  else
-    defp pg_children() do
-      []
-    end
   end
 
   @doc """

@@ -2,7 +2,6 @@ name: Elixir CI
 
 on:
   pull_request:
-    branches: [master]
   push:
     tags:
       - 0.*
@@ -18,13 +17,6 @@ jobs:
       matrix:
         version:
           [
-            { elixir: "1.14", otp: "24", os: "ubuntu-22.04" },
-            { elixir: "1.14", otp: "25", os: "ubuntu-22.04" },
-
-            { elixir: "1.15", otp: "24", os: "ubuntu-22.04" },
-            { elixir: "1.15", otp: "25", os: "ubuntu-22.04" },
-            { elixir: "1.15", otp: "26", os: "ubuntu-22.04" },
-
             { elixir: "1.16", otp: "24", os: "ubuntu-22.04" },
             { elixir: "1.16", otp: "25", os: "ubuntu-22.04" },
             { elixir: "1.16", otp: "26", os: "ubuntu-22.04" },

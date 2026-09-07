@@ -1,8 +1,11 @@
 # storex
 
-## 0.6.2
+## 0.7.0
 
+- **[BREAKING]** Updated the minimum required version of Elixir to `1.16`
 - Fix type warnings emitted by `use Storex.Store` on Elixir 1.18 and newer
+- Removed the `:pg2` fallback, unreachable since OTP 24
+- Updated dependencies
 
 ## 0.6.1
 
