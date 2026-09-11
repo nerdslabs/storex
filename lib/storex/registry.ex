@@ -54,6 +54,15 @@ defmodule Storex.Registry do
     :ets.match_object(@registry, {:_, :_, session, :_, :_})
   end
 
+  # Every session attached to one store process, as `{session, session_pid}`.
+  # Under the default `:session` scope that is always a single row; under a
+  # shared scope it is the fan-out list for a diff, and the reference count that
+  # decides when the process stops.
+  def store_sessions(store_pid) do
+    :ets.match(@registry, {:_, store_pid, :"$1", :"$2", :_})
+    |> Enum.map(fn [session, session_pid] -> {session, session_pid} end)
+  end
+
   def handle_call({:register_store, store, store_pid, session, session_pid, key}, _from, state) do
     :ets.insert(@registry, {store, store_pid, session, session_pid, key})
     Process.monitor(store_pid)

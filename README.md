@@ -117,6 +117,64 @@ defmodule ExampleApp.Store.Counter do
 end
 ```
 
+### Store scope
+
+By default every connected session gets its own store process and its own
+state. A store's *scope* changes that:
+
+```elixir
+use Storex.Store                          # same as scope: :session
+use Storex.Store, scope: :session         # one process per connected session
+use Storex.Store, scope: :global          # one process for the whole node
+use Storex.Store, scope: {:key, "room"}   # one process per params["room"] value
+```
+
+With `:global` or `{:key, _}` several sessions share one process and one state.
+A mutation is applied once, the diff is computed once, and it reaches every
+session attached to that process — the session that issued the mutation gets it
+as the reply to its own `commit`, the rest receive it as a push and their
+`subscribe` listeners fire.
+
+```elixir
+defmodule ExampleApp.Store.Chat do
+  use Storex.Store, scope: {:key, "room"}
+
+  def init(_session_id, params) do
+    {:ok, %{room: Map.fetch!(params, "room"), messages: []}}
+  end
+
+  # `session_id` is the session that issued the mutation, so a shared store can
+  # tell its clients apart.
+  def mutation("send", [text], session_id, _params, state) do
+    {:noreply, %{state | messages: state.messages ++ [%{from: session_id, text: text}]}}
+  end
+end
+```
+
+```typescript
+const chat = useStorex({ store: 'ExampleApp.Store.Chat', params: { room: 'lobby' } })
+
+chat.subscribe((state) => render(state.messages))
+chat.commit('send', 'hello')   // every session in `lobby` sees it
+```
+
+What a shared scope changes about the callbacks:
+
+- `init/2` runs **once**, when the first session attaches. It gets that
+  session's id and params; the params of every session that attaches later are
+  ignored.
+- `mutation/5` gets the id of the session that *issued* the mutation. Its
+  `params` argument is always the ones `init/2` ran with.
+- `terminate/3` runs when the **last** session detaches, with the session id
+  and params `init/2` was given.
+- A store scoped by `{:key, name}` refuses to join when the param is missing,
+  with an error frame rather than a dropped connection.
+
+`:global` is per node, not per cluster. `Storex.mutate/3` and `Storex.mutate/4`
+broadcast to every node, so a `:global` store receives a mutation once per node,
+against that node's own copy of the state.
+
+
 ### Connect to store
 
 You have to connect the newly created store with a frontend side to be able to synchronise the state: `params` are passed as second argument in store `init/2` and as third in `mutation/5`. You can subscribe to changes inside store state by passing option `subscribe` with function as a value.
