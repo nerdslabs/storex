@@ -7,6 +7,22 @@ defmodule Storex.Socket do
     - `4001`: Store is not defined or can't be compiled.
   """
 
+  # A diff produced by somebody else's mutation on a store this session shares.
+  # It carries no `request`, because this session did not ask for it — the
+  # client applies the diff and resolves nothing.
+  @doc false
+  def diff_handle(store, diff, %{session: session} = state) do
+    %{
+      type: "mutation",
+      session: session,
+      store: store,
+      diff: diff,
+      request: nil
+    }
+    |> Jason.encode!()
+    |> (&{:text, &1, state}).()
+  end
+
   @doc false
   def message_handle(%{type: "ping"} = message, state) do
     message =
