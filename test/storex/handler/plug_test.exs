@@ -178,6 +178,122 @@ defmodule StorexTest.Handler.Plug do
     end
   end
 
+  describe "unknown message types" do
+    test "an error frame is refused with 1007", context do
+      client = tcp_client(context)
+      http1_handshake(client, Storex.Handler.Plug)
+
+      # `error` frames only travel server to client. This one used to pass
+      # `Storex.Message.cast/1` and then crash `message_handle/2`.
+      send_text_frame(client, """
+      {
+        "type": "error",
+        "store": "StorexTest.Store.Counter",
+        "data": null,
+        "request": "#{random_string()}",
+        "session": "#{random_string()}"
+      }
+      """)
+
+      assert recv_connection_close_frame(client) ==
+               {:ok, <<1007::16, "Payload is malformed."::binary>>}
+    end
+  end
+
+  describe "binary frames" do
+    test "are rejected with 1003", context do
+      client = tcp_client(context)
+      http1_handshake(client, Storex.Handler.Plug)
+
+      send_binary_frame(client, :erlang.term_to_binary(%{type: "ping", request: "r"}))
+
+      assert recv_connection_close_frame(client) ==
+               {:ok, <<1003::16, "Binary frames are not supported."::binary>>}
+    end
+
+    test "cannot create atoms", context do
+      client = tcp_client(context)
+      http1_handshake(client, Storex.Handler.Plug)
+
+      name = "storex_binary_frame_probe_#{System.unique_integer([:positive])}"
+
+      # External term format for an atom that does not exist in this VM yet. It
+      # is built by hand because `:erlang.term_to_binary/1` would create the atom
+      # here first, in the test process.
+      send_binary_frame(client, <<131, 118, byte_size(name)::16, name::binary>>)
+
+      assert recv_connection_close_frame(client) ==
+               {:ok, <<1003::16, "Binary frames are not supported."::binary>>}
+
+      assert_raise ArgumentError, fn -> String.to_existing_atom(name) end
+    end
+  end
+
+  describe "keepalive" do
+    test "a ping is answered with a pong carrying the same request id", context do
+      client = tcp_client(context)
+      http1_handshake(client, Storex.Handler.Plug)
+
+      request = random_string()
+
+      send_text_frame(client, """
+      {
+        "type": "ping",
+        "request": "#{request}"
+      }
+      """)
+
+      {:ok, result} = recv_text_frame(client)
+
+      assert %{type: "pong", request: ^request} = Jason.decode!(result, keys: :atoms)
+    end
+
+    test "a ping does not need a store to be joined", context do
+      client = tcp_client(context)
+      http1_handshake(client, Storex.Handler.Plug)
+
+      send_text_frame(client, ~s({"type": "ping", "request": "#{random_string()}"}))
+
+      assert {:ok, _} = recv_text_frame(client)
+    end
+  end
+
+  describe "session cleanup" do
+    test "closing the connection stops the session's stores", context do
+      client = tcp_client(context)
+      http1_handshake(client, Storex.Handler.Plug)
+
+      send_text_frame(client, """
+      {
+        "type": "join",
+        "store": "StorexTest.Store.Counter",
+        "data": {},
+        "request": "#{random_string()}"
+      }
+      """)
+
+      {:ok, result} = recv_text_frame(client)
+      assert %{session: session} = Jason.decode!(result, keys: :atoms)
+
+      store_pid = Storex.Registry.get_store_pid("StorexTest.Store.Counter", session)
+      assert is_pid(store_pid)
+
+      :gen_tcp.close(client)
+
+      assert Enum.reduce_while(1..200, false, fn _, _ ->
+               if Storex.Registry.session_stores(session) == [] do
+                 {:halt, true}
+               else
+                 Process.sleep(10)
+                 {:cont, false}
+               end
+             end),
+             "the session's registry rows were not cleaned up"
+
+      refute Process.alive?(store_pid)
+    end
+  end
+
   # Simple WebSocket client
 
   def tcp_client(context) do

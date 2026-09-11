@@ -12,4 +12,11 @@ defmodule StorexTest.Store.InvalidMutation do
   def mutation("error", _data, _session_id, _params, _state) do
     {:error, "Not allowed"}
   end
+
+  # Matches, then raises a FunctionClauseError of its own from further down.
+  def mutation("raise", data, _session_id, _params, _state) do
+    {:noreply, %{counter: only_zero(data)}}
+  end
+
+  defp only_zero(0), do: 0
 end

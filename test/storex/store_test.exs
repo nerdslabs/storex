@@ -6,7 +6,27 @@ defmodule StorexTest.StoreTest do
   alias StorexTest.Store.InvalidInit
   alias StorexTest.Store.InvalidMutation
   alias StorexTest.Store.KeyInit
+  alias StorexTest.Store.Terminating
   alias StorexTest.Store.Text
+
+  describe "resolve/1" do
+    test "resolves a module that declares the behaviour" do
+      assert Storex.Store.resolve("StorexTest.Store.Counter") == {:ok, Counter}
+    end
+
+    test "refuses a module that does not declare the behaviour" do
+      assert Storex.Store.resolve("StorexTest.NotAStore") == {:error, :not_store}
+    end
+
+    test "refuses a name that does not resolve to a module" do
+      assert Storex.Store.resolve("StorexTest.Store.NotExisting") == {:error, :not_exists}
+    end
+
+    test "refuses a name that is not an existing atom" do
+      assert Storex.Store.resolve("Never.Compiled.#{System.unique_integer([:positive])}") ==
+               {:error, :not_exists}
+    end
+  end
 
   describe "init dispatch" do
     test "{:ok, state} is normalized with a nil key" do
@@ -60,6 +80,43 @@ defmodule StorexTest.StoreTest do
                {:error,
                 "No mutation matching \"unknown\" with data [1] in store StorexTest.Store.Counter"}
     end
+
+    test "a FunctionClauseError raised inside a matching mutation is not swallowed" do
+      error =
+        assert_raise FunctionClauseError, fn ->
+          Storex.Store.__mutation__(InvalidMutation, "raise", 1, "session", %{}, %{})
+        end
+
+      assert error.function == :only_zero
+      assert error.arity == 1
+    end
+
+    test "the original stacktrace of a raise inside a mutation is preserved" do
+      stacktrace =
+        try do
+          Storex.Store.__mutation__(InvalidMutation, "raise", 1, "session", %{}, %{})
+        rescue
+          _ -> __STACKTRACE__
+        end
+
+      assert [{InvalidMutation, :only_zero, [1], _location} | _rest] = stacktrace
+    end
+  end
+
+  describe "terminate dispatch" do
+    test "the callback is invoked with the session, params and state" do
+      params = %{"reporter" => self()}
+
+      assert Storex.Store.__terminate__(Terminating, "session", params, %{counter: 3}) ==
+               {:terminated, "session", params, %{counter: 3}}
+
+      assert_received {:terminated, "session", ^params, %{counter: 3}}
+    end
+
+    test "a store that does not implement it is a no-op" do
+      refute function_exported?(Counter, :terminate, 3)
+      assert Storex.Store.__terminate__(Counter, "session", %{}, %{counter: 0}) == nil
+    end
   end
 
   describe "store server" do
@@ -78,9 +135,8 @@ defmodule StorexTest.StoreTest do
       assert {:ok, nil} =
                Storex.Supervisor.add_store("StorexTest.Store.Counter", session, self(), %{})
 
-      assert Storex.Supervisor.get_store_state(session, "StorexTest.Store.Counter") == %{
-               counter: 0
-             }
+      assert Storex.Supervisor.get_store_state(session, "StorexTest.Store.Counter") ==
+               {:ok, %{counter: 0}}
     end
 
     test "starts a store returning {:ok, state, key}", %{session: session} do
@@ -91,6 +147,18 @@ defmodule StorexTest.StoreTest do
     test "does not start a store returning {:error, reason}", %{session: session} do
       assert {:error, "Unauthorized"} =
                Storex.Supervisor.add_store("StorexTest.Store.ErrorInit", session, self(), %{})
+    end
+
+    test "stopping a store runs terminate/3 with the current state", %{session: session} do
+      store = "StorexTest.Store.Terminating"
+      params = %{"reporter" => self()}
+
+      {:ok, _} = Storex.Supervisor.add_store(store, session, self(), params)
+      {:ok, _} = Storex.Supervisor.mutate_store(session, store, "increase", [])
+
+      Storex.Supervisor.remove_store(session, store)
+
+      assert_receive {:terminated, ^session, ^params, %{counter: 1}}, 1000
     end
 
     test "mutating through the server returns the state diff", %{session: session} do

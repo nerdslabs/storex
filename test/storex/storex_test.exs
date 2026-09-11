@@ -53,7 +53,7 @@ defmodule StorexTest do
 
     test "get store", %{session: session, store: store, pid: pid} do
       assert {:ok, _pid} = Storex.Supervisor.add_store(store, session, pid, %{})
-      assert %{counter: 0} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 0}} = Storex.Supervisor.get_store_state(session, store)
       Storex.Supervisor.remove_store(session, store)
     end
 
@@ -64,7 +64,55 @@ defmodule StorexTest do
 
       assert_receive :ok
 
-      assert %{counter: 1} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 1}} = Storex.Supervisor.get_store_state(session, store)
+    end
+
+    test "reaches every session of the store", %{session: session, store: store, pid: pid} do
+      # The point of mutate/3 is the fan-out. One session proves nothing.
+      other_session = Application.get_env(:storex, :session_id_library, Nanoid).generate()
+
+      {:ok, other_pid} =
+        GenServer.start_link(FakeWebsocketServer, [self(), other_session],
+          name: {:global, other_session}
+        )
+
+      assert {:ok, _} = Storex.Supervisor.add_store(store, session, pid, %{})
+      assert {:ok, _} = Storex.Supervisor.add_store(store, other_session, other_pid, %{})
+
+      Storex.mutate(store, "increase", [])
+
+      assert_receive :ok
+      assert_receive :ok
+
+      assert {:ok, %{counter: 1}} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 1}} = Storex.Supervisor.get_store_state(other_session, store)
+
+      Storex.Supervisor.remove_store(other_session, store)
+    end
+
+    test "does not reach a session that joined a different store", %{
+      session: session,
+      store: store,
+      pid: pid
+    } do
+      other_session = Application.get_env(:storex, :session_id_library, Nanoid).generate()
+
+      {:ok, other_pid} =
+        GenServer.start_link(FakeWebsocketServer, [self(), other_session],
+          name: {:global, other_session}
+        )
+
+      assert {:ok, _} = Storex.Supervisor.add_store(store, session, pid, %{})
+
+      assert {:ok, _} =
+               Storex.Supervisor.add_store("StorexTest.Store.Text", other_session, other_pid, %{})
+
+      Storex.mutate(store, "increase", [])
+
+      assert_receive :ok
+      refute_receive :ok, 200
+
+      Storex.Supervisor.remove_store(other_session, "StorexTest.Store.Text")
     end
 
     test "mutate store in cluster", %{session: session, store: store, pid: pid} do
@@ -83,7 +131,7 @@ defmodule StorexTest do
 
       assert_receive :ok
 
-      assert %{counter: 1} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 1}} = Storex.Supervisor.get_store_state(session, store)
     end
   end
 
@@ -117,7 +165,7 @@ defmodule StorexTest do
 
       assert_receive :ok
 
-      assert %{counter: 1} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 1}} = Storex.Supervisor.get_store_state(session, store)
     end
 
     test "don't mutate store for invalid key", %{session: session, store: store, pid: pid} do
@@ -127,7 +175,7 @@ defmodule StorexTest do
 
       refute_receive :ok
 
-      assert %{counter: 0} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 0}} = Storex.Supervisor.get_store_state(session, store)
     end
 
     test "don't mutate store for invalid key in cluster", %{
@@ -150,7 +198,7 @@ defmodule StorexTest do
 
       refute_receive :ok
 
-      assert %{counter: 0} = Storex.Supervisor.get_store_state(session, store)
+      assert {:ok, %{counter: 0}} = Storex.Supervisor.get_store_state(session, store)
     end
   end
 
@@ -164,6 +212,16 @@ defmodule StorexTest do
 
     test "create store", %{session: session, store: store} do
       assert {:error, "Unauthorized"} = Storex.Supervisor.add_store(store, session, self(), %{})
+    end
+  end
+
+  describe "mutate return value" do
+    test "mutate/3 returns :ok" do
+      assert Storex.mutate("StorexTest.Store.Counter", "increase", []) == :ok
+    end
+
+    test "mutate/4 returns :ok" do
+      assert Storex.mutate("key", "StorexTest.Store.Counter", "increase", []) == :ok
     end
   end
 end

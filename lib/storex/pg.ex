@@ -14,17 +14,15 @@ defmodule Storex.PG do
     {:ok, @name}
   end
 
+  # `:pg.get_members/2` always returns a list — the `{:error, _}` clause this used
+  # to carry was `:pg2`'s contract, and `:pg2` is gone. `Enum.each/2` rather than
+  # a comprehension so the return value is `:ok`: `send/2` returns the message,
+  # so `Storex.mutate/3` used to hand back the internal broadcast envelope once
+  # per node.
   def broadcast(payload) do
-    :pg.get_members(Storex.PG, @name)
-    |> case do
-      {:error, _} ->
-        :error
-
-      pids ->
-        for pid <- pids do
-          send(pid, {:broadcast, payload})
-        end
-    end
+    Storex.PG
+    |> :pg.get_members(@name)
+    |> Enum.each(&send(&1, {:broadcast, payload}))
   end
 
   @impl true

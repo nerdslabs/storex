@@ -15,8 +15,18 @@ defmodule Storex.Supervisor do
     )
   end
 
+  @doc false
+  # The name a store process registers under. It is deliberately a `:via` tuple
+  # and not an atom: session ids are unique per connection, so naming processes
+  # `:"#{session}_#{store}"` created one permanent atom per session-store pair
+  # and eventually exhausted the atom table on a long-running node.
+  #
+  # Nothing looks a store up by this name — `Storex.Registry` maps to the pid
+  # for that. It exists so that starting the same `{session, store}` twice
+  # fails with `{:error, {:already_started, pid}}` instead of silently
+  # producing a second process.
   def name(session, store) do
-    String.to_atom("#{session}_#{store}")
+    {:via, Registry, {Storex.StoreRegistry, {session, store}}}
   end
 
   def add_store(store, session, session_pid, params \\ %{}) do
@@ -46,15 +56,29 @@ defmodule Storex.Supervisor do
     end
   end
 
+  # `:sys.get_state/1` is a debug function, and using it here meant reading the
+  # generated `Server`'s internal state shape from the outside, on the join path.
+  # The process answers for its own state instead.
   def get_store_state(session, store) do
     Storex.Registry.get_store_pid(store, session)
-    |> :sys.get_state()
-    |> Map.get(:state)
+    |> case do
+      :undefined ->
+        {:error, "Store '#{store}' is not joined in this session."}
+
+      pid ->
+        {:ok, GenServer.call(pid, :get_state)}
+    end
   end
 
   def mutate_store(session, store, name, data) do
     Storex.Registry.get_store_pid(store, session)
-    |> GenServer.call({name, data})
+    |> case do
+      :undefined ->
+        {:error, "Store '#{store}' is not joined in this session."}
+
+      pid ->
+        GenServer.call(pid, {name, data})
+    end
   end
 
   def remove_store(session, store) do

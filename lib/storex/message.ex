@@ -37,17 +37,10 @@ defmodule Storex.Message do
      }}
   end
 
-  def cast(%{
-        "type" => "error",
-        "store" => store,
-        "data" => data,
-        "request" => request,
-        "session" => session
-      }) do
-    {:ok,
-     %__MODULE__{type: "error", store: store, data: data, request: request, session: session}}
-  end
-
+  # `error` frames only ever travel server to client, and are built as plain maps
+  # in `Storex.Socket`. Casting one here made it past the allowlist and then hit
+  # `Storex.Socket.message_handle/2`, which has no clause for it, so a client
+  # could kill its connection process with a well-formed frame.
   def cast(_) do
     {:error, "Unknown message type"}
   end

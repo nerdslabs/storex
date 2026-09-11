@@ -20,8 +20,39 @@ defmodule Storex.Store do
   @doc """
   Called when store session ends.
   """
-  @callback terminate(session_id :: binary(), params :: %{binary() => any()}, state :: any()) :: any()
+  @callback terminate(session_id :: binary(), params :: %{binary() => any()}, state :: any()) ::
+              any()
   @optional_callbacks terminate: 3
+
+  @doc false
+  # Resolves the store module from the name a client sent. All three checks
+  # belong together: `Module.safe_concat/1` refuses to create new atoms,
+  # `Code.ensure_compiled/1` refuses names that do not resolve to a real module,
+  # and the behaviour check refuses modules that are not stores. Dropping any of
+  # them lets client input reach arbitrary modules, which is what the SSR path
+  # did for as long as it carried its own copy of only the first check.
+  def resolve(store) do
+    with {:ok, module} <- safe_concat(store),
+         {:module, module} <- Code.ensure_compiled(module),
+         true <- storex_store?(module) do
+      {:ok, module}
+    else
+      false -> {:error, :not_store}
+      _ -> {:error, :not_exists}
+    end
+  end
+
+  defp safe_concat(store) do
+    {:ok, Module.safe_concat([store])}
+  rescue
+    ArgumentError -> {:error, :not_exists}
+  end
+
+  defp storex_store?(module) do
+    __MODULE__ in (module.module_info(:attributes)
+                   |> Keyword.get_values(:behaviour)
+                   |> List.flatten())
+  end
 
   @doc false
   def __init__(store, session, params) do
@@ -60,15 +91,29 @@ defmodule Storex.Store do
            "Return value of mutation should be {:reply, message, state}, {:noreply, state} or {:error, error}"}
       end
     rescue
-      FunctionClauseError ->
-        {:error,
-         "No mutation matching #{inspect(name)} with data #{inspect(data)} in store #{inspect(store)}"}
+      error in FunctionClauseError ->
+        if unmatched_mutation?(error, store) do
+          {:error,
+           "No mutation matching #{inspect(name)} with data #{inspect(data)} in store #{inspect(store)}"}
+        else
+          reraise error, __STACKTRACE__
+        end
     end
   end
 
+  # Only the store's own `mutation/5` failing to match means "no such mutation".
+  # Any other `FunctionClauseError` was raised deeper inside a mutation that did
+  # match, and has to keep its original stacktrace.
+  defp unmatched_mutation?(%FunctionClauseError{} = error, store) do
+    error.module == store and error.function == :mutation and error.arity == 5
+  end
+
   @doc false
+  # `function_exported?/3` answers `false` for a module that is not loaded yet,
+  # so the callback would be skipped silently. `ensure_loaded?/1` first makes the
+  # answer depend on the store, not on what the code server happens to hold.
   def __terminate__(store, session, params, state) do
-    if :erlang.function_exported(store, :terminate, 3) do
+    if Code.ensure_loaded?(store) and function_exported?(store, :terminate, 3) do
       apply(store, :terminate, [session, params, state])
     end
   end
@@ -112,6 +157,10 @@ defmodule Storex.Store do
           Storex.Store.__terminate__(@store, state.session, state.params, state.state)
 
           {:stop, :normal, state}
+        end
+
+        def handle_call(:get_state, _, state) do
+          {:reply, state.state, state}
         end
 
         def handle_call({name, data}, _, state) do
