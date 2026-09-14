@@ -1,9 +1,5 @@
 # storex
 
-## Unreleased
-
-- Added `Storex.Test`, a supported way to drive a store from a test with no socket and no browser. `start_store/2`, `state/1`, `commit/3`, `broadcast/4` and `stop/1` cover starting a store (including a store whose `init/2` refuses), reading its state, running a mutation and getting back the state, the diff and any reply, running a `Storex.mutate/3` fan-out and applying it, and stopping the store synchronously so a test can assert on what `terminate/3` did. Until now this meant going through `Storex.Supervisor` and `Storex.Registry`, both `@moduledoc false`, or driving a real browser through Wallaby. The diff is the reason it exists: it is the contract with the frontend and there was no other way to assert on it. A store started this way registers the calling process as its session and is stopped when the test ends
-
 ## 0.7.0
 
 - **[BREAKING]** Updated the minimum required version of Elixir to `1.16`
@@ -26,6 +22,7 @@
 - Store processes are now registered through a `Registry` keyed by `{session, store}` instead of being named `:"#{session}_#{store}"`. Session ids are unique per connection, so the old naming created one permanent atom per session-store pair and could exhaust the atom table on a long-running node
 - Removed the `:pg2` fallback, unreachable since OTP 24
 - Updated dependencies
+- Added `Storex.Test`, a supported way to drive a store from a test with no socket and no browser. `start_store/2`, `state/1`, `commit/3`, `broadcast/4` and `stop/1` cover starting a store (including a store whose `init/2` refuses), reading its state, running a mutation and getting back the state, the diff and any reply, running a `Storex.mutate/3` fan-out and applying it, and stopping the store synchronously so a test can assert on what `terminate/3` did. Until now this meant going through `Storex.Supervisor` and `Storex.Registry`, both `@moduledoc false`, or driving a real browser through Wallaby. The diff is the reason it exists: it is the contract with the frontend and there was no other way to assert on it. A store started this way registers the calling process as its session and is stopped when the test ends
 
 ## 0.6.1
 
