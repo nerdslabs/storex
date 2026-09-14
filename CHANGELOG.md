@@ -1,5 +1,10 @@
 # storex
 
+## Unreleased
+
+- Stores can now be shared between sessions. `use Storex.Store, scope: :global` puts every session on the node on one process and one state; `use Storex.Store, scope: {:key, "room"}` does the same per value of a join param. The default is `scope: :session`, which is the behaviour Storex has always had, and stores that do not pass the option are unaffected. Under a shared scope `init/2` runs once for the first session to attach, `mutation/5` receives the session that *issued* the mutation rather than the one `init/2` ran with, `terminate/3` runs when the last session detaches, and a mutation's diff is computed once and pushed to every other attached session
+- `Storex.PG` now dispatches a `Storex.mutate/3` or `Storex.mutate/4` broadcast once per store *process* instead of once per registry row. Without that a shared store would run the mutation once per attached session against the state they all share. Nothing changes for `:session` scoped stores, where every row already has a process of its own
+
 ## 0.7.0
 
 - **[BREAKING]** Updated the minimum required version of Elixir to `1.16`

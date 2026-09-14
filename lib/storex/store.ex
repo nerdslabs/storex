@@ -1,4 +1,43 @@
 defmodule Storex.Store do
+  @moduledoc """
+  Behaviour for a Storex store.
+
+  ## Scope
+
+  A store's *scope* decides how many processes — and therefore how many
+  independent states — exist for a given store module. It is set on `use`:
+
+  ```elixir
+  use Storex.Store                          # same as scope: :session
+  use Storex.Store, scope: :session         # one process per connected session
+  use Storex.Store, scope: :global          # one process for the whole node
+  use Storex.Store, scope: {:key, "room"}   # one process per params["room"] value
+  ```
+
+  With the default `:session` scope every connection gets its own store process
+  and its own state, which is the behaviour Storex has always had.
+
+  With `:global` or `{:key, _}` several sessions share one process and one
+  state. A mutation is applied once, the diff is computed once, and it is sent
+  to every session attached to that process — the one that issued the mutation
+  gets it as the reply to its own request, the rest receive it as a push.
+
+  Shared scopes change what the callbacks are handed:
+
+  - `init/2` runs **once**, when the first session attaches. It receives that
+    session's id and params; the params of every session that attaches later are
+    ignored.
+  - `mutation/5` receives the id of the session that *issued* the mutation, so a
+    shared store can tell its clients apart. The `params` argument is always the
+    ones `init/2` ran with.
+  - `terminate/3` runs when the **last** session detaches, with the session id
+    `init/2` was given.
+
+  `:global` is per node, not per cluster. `Storex.mutate/3` and `Storex.mutate/4`
+  broadcast to every node, so a `:global` store still receives a mutation once
+  per node, against that node's own copy of the state.
+  """
+
   @doc """
   Called when store session starts.
   """
@@ -52,6 +91,52 @@ defmodule Storex.Store do
     __MODULE__ in (module.module_info(:attributes)
                    |> Keyword.get_values(:behaviour)
                    |> List.flatten())
+  end
+
+  @doc false
+  # The identity a store process is registered under. Everything that shares a
+  # scope id shares a process, and therefore a state. For the default `:session`
+  # scope the id is the session itself, which is why nothing changes for stores
+  # that do not opt in.
+  def scope_id(module, session, params) do
+    scope_id(scope(module), module, session, params)
+  end
+
+  defp scope_id(:session, _module, session, _params), do: {:ok, session}
+
+  defp scope_id(:global, _module, _session, _params), do: {:ok, :global}
+
+  defp scope_id({:key, key}, _module, _session, params) when is_map_key(params, key) do
+    {:ok, {key, Map.fetch!(params, key)}}
+  end
+
+  defp scope_id({:key, key}, module, _session, _params) do
+    {:error, "Store #{inspect(module)} is scoped by param #{inspect(key)}, which was not given."}
+  end
+
+  @doc false
+  # `function_exported?/3` answers `false` for a module that is not loaded yet,
+  # so asking it alone silently degrades every store to `:session` scope
+  # depending on what the code server happens to hold — the same trap
+  # `__terminate__/4` fell into. The fallback is for a module that declares the
+  # behaviour by hand instead of through `use Storex.Store`, and so has no
+  # `__storex_scope__/0` at all.
+  def scope(module) do
+    if Code.ensure_loaded?(module) and function_exported?(module, :__storex_scope__, 0) do
+      module.__storex_scope__()
+    else
+      :session
+    end
+  end
+
+  @doc false
+  def __validate_scope__(:session), do: :session
+  def __validate_scope__(:global), do: :global
+  def __validate_scope__({:key, key} = scope) when is_binary(key), do: scope
+
+  def __validate_scope__(other) do
+    raise ArgumentError,
+          "invalid :scope for use Storex.Store — expected :session, :global or {:key, binary}, got: #{inspect(other)}"
   end
 
   @doc false
@@ -118,35 +203,50 @@ defmodule Storex.Store do
     end
   end
 
-  defmacro __using__(_opts) do
+  defmacro __using__(opts) do
+    scope = opts |> Keyword.get(:scope, :session) |> Storex.Store.__validate_scope__()
+
     quote do
       @behaviour Storex.Store
+
+      @storex_scope unquote(Macro.escape(scope))
+
+      @doc false
+      def __storex_scope__, do: @storex_scope
 
       @before_compile Storex.Store
     end
   end
 
   defmacro __before_compile__(env) do
+    scope = Module.get_attribute(env.module, :storex_scope) || :session
+
     quote do
       defmodule Server do
         use GenServer
 
         @store unquote(env.module)
 
-        def init({session, init_state, params}) do
+        def init({session, store, init_state, params, key}) do
           {:ok,
            %{
              state: init_state,
              session: session,
-             params: params
+             store: store,
+             params: params,
+             key: key
            }}
         end
 
-        def start_link([], session: session, store: store, params: params) do
-          opts = [name: Storex.Supervisor.name(session, store)]
+        def start_link([], opts) do
+          session = Keyword.fetch!(opts, :session)
+          store = Keyword.fetch!(opts, :store)
+          params = Keyword.fetch!(opts, :params)
+          name = Keyword.get(opts, :name) || Storex.Supervisor.name(session, store)
 
           with {:ok, state, key} <- init_store(session, params),
-               {:ok, pid} <- GenServer.start_link(Server, {session, state, params}, opts) do
+               {:ok, pid} <-
+                 GenServer.start_link(Server, {session, store, state, params, key}, name: name) do
             {:ok, pid, %{session: session, key: key}}
           else
             {:error, reason} -> {:error, reason}
@@ -163,18 +263,30 @@ defmodule Storex.Store do
           {:reply, state.state, state}
         end
 
-        def handle_call({name, data}, _, state) do
-          Storex.Store.__mutation__(@store, name, data, state.session, state.params, state.state)
+        # Asked by `Storex.Supervisor` when a session attaches to a store process
+        # that is already running. The key belongs to the `init/2` that started
+        # it, and the process is the only place that is guaranteed to hold it —
+        # the registry row of the session that started it may not be written yet.
+        def handle_call(:get_key, _, state) do
+          {:reply, state.key, state}
+        end
+
+        # `from_session` is the session that issued the mutation, which is not
+        # necessarily the one `init/2` ran with: under a shared scope many
+        # sessions call into the same process. It is what `mutation/5` is given,
+        # so a shared store can tell its clients apart.
+        def handle_call({:mutation, name, data, from_session}, _, state) do
+          Storex.Store.__mutation__(@store, name, data, from_session, state.params, state.state)
           |> case do
             {:reply, message, result} ->
               diff = Storex.Diff.check(state.state, result)
-              state = Map.put(state, :state, result)
-              {:reply, {:ok, message, diff}, state}
+              broadcast_diff(diff, from_session, state)
+              {:reply, {:ok, message, diff}, Map.put(state, :state, result)}
 
             {:noreply, result} ->
               diff = Storex.Diff.check(state.state, result)
-              state = Map.put(state, :state, result)
-              {:reply, {:ok, diff}, state}
+              broadcast_diff(diff, from_session, state)
+              {:reply, {:ok, diff}, Map.put(state, :state, result)}
 
             {:error, error} ->
               {:reply, {:error, error}, state}
@@ -185,9 +297,35 @@ defmodule Storex.Store do
           raise "Not handled call: #{inspect(call)}"
         end
 
+        unquote(broadcast_diff(scope))
+
         defp init_store(session, params) do
           Storex.Store.__init__(@store, session, params)
         end
+      end
+    end
+  end
+
+  # Under `:session` scope a store process has exactly one session, so the
+  # session that issued the mutation is the only one there is and the reply
+  # carries the diff already. Generating the fan-out away rather than branching
+  # on the scope at runtime keeps the existing path at zero added cost.
+  defp broadcast_diff(:session) do
+    quote do
+      defp broadcast_diff(_diff, _from_session, _state), do: :ok
+    end
+  end
+
+  defp broadcast_diff(_shared) do
+    quote do
+      defp broadcast_diff([], _from_session, _state), do: :ok
+
+      defp broadcast_diff(diff, from_session, state) do
+        Storex.Registry.store_sessions(self())
+        |> Enum.each(fn
+          {^from_session, _session_pid} -> :ok
+          {_session, session_pid} -> send(session_pid, {:storex_diff, state.store, diff})
+        end)
       end
     end
   end

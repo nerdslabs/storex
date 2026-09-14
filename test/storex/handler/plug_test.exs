@@ -294,6 +294,82 @@ defmodule StorexTest.Handler.Plug do
     end
   end
 
+  describe "shared scope" do
+    test "a mutation by one session is pushed to the others sharing the store", context do
+      room = "room-#{random_string()}"
+
+      a = tcp_client(context)
+      http1_handshake(a, Storex.Handler.Plug)
+
+      b = tcp_client(context)
+      http1_handshake(b, Storex.Handler.Plug)
+
+      [session_a, _session_b] =
+        for client <- [a, b] do
+          send_text_frame(client, """
+          {
+            "type": "join",
+            "store": "StorexTest.Store.Room",
+            "data": {"room": "#{room}"},
+            "request": "#{random_string()}"
+          }
+          """)
+
+          {:ok, joined} = recv_text_frame(client)
+
+          assert %{type: "join", data: %{counter: 0}, session: session} =
+                   Jason.decode!(joined, keys: :atoms)
+
+          session
+        end
+
+      request = random_string()
+
+      send_text_frame(a, """
+      {
+        "type": "mutation",
+        "store": "StorexTest.Store.Room",
+        "data": {"name": "increase", "data": []},
+        "session": "#{session_a}",
+        "request": "#{request}"
+      }
+      """)
+
+      # The mutating session gets the diff as the reply to its own request.
+      {:ok, reply} = recv_text_frame(a)
+
+      assert %{type: "mutation", request: ^request, diff: diff} =
+               Jason.decode!(reply, keys: :atoms)
+
+      assert Enum.any?(diff, &match?(%{a: "u", p: ["counter"], t: 1}, &1))
+
+      # The other one is pushed the same diff, with no request to resolve.
+      {:ok, pushed} = recv_text_frame(b)
+
+      assert %{type: "mutation", request: nil, diff: ^diff, store: "StorexTest.Store.Room"} =
+               Jason.decode!(pushed, keys: :atoms)
+    end
+
+    test "joining without the scope param is an error frame, not a close", context do
+      client = tcp_client(context)
+      http1_handshake(client, Storex.Handler.Plug)
+
+      send_text_frame(client, """
+      {
+        "type": "join",
+        "store": "StorexTest.Store.Room",
+        "data": {},
+        "request": "#{random_string()}"
+      }
+      """)
+
+      {:ok, result} = recv_text_frame(client)
+
+      assert %{type: "error", error: error} = Jason.decode!(result, keys: :atoms)
+      assert error =~ "scoped by param \"room\""
+    end
+  end
+
   # Simple WebSocket client
 
   def tcp_client(context) do

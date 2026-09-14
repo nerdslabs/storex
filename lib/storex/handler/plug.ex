@@ -54,6 +54,11 @@ defmodule Storex.Handler.Plug do
     |> map_response()
   end
 
+  def handle_info({:storex_diff, store, diff}, state) do
+    Socket.diff_handle(store, diff, state)
+    |> map_response()
+  end
+
   def handle_info(_info, state) do
     {:ok, state}
   end
