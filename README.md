@@ -177,6 +177,48 @@ store.onDisconnected((closeEvent) => {
 })
 ```
 
+## Testing
+
+`Storex.Test` drives a store with no socket and no browser:
+
+```elixir
+defmodule MyApp.Store.CounterTest do
+  use ExUnit.Case
+
+  test "increasing counts up" do
+    store = Storex.Test.start_store!(MyApp.Store.Counter)
+
+    assert {:ok, result} = Storex.Test.commit(store, "increase")
+
+    assert result.state == %{counter: 1}
+    assert result.diff == [%{a: "u", p: [:counter], t: 1}]
+  end
+end
+```
+
+`result.diff` is the point: the diff is what actually goes over the wire, and it
+is the part a store author cannot otherwise get at without driving a browser.
+`result.message` carries the reply from a `{:reply, message, state}` mutation.
+
+A mutation that errors — a name no clause matches, an `{:error, reason}` return
+— comes back as `{:error, reason}`, the same thing the client would have
+received as an error frame. `commit!/3` raises instead, for the cases a test
+does not mean to assert on.
+
+```elixir
+store = Storex.Test.start_store!(MyApp.Store.Counter, params: %{"start" => 10})
+
+Storex.Test.state(store)                    # current state
+Storex.Test.commit!(store, "set", [3])      # mutate, raising on error
+Storex.Test.broadcast(store, "reload")      # as Storex.mutate/3 does, applied
+Storex.Test.stop(store)                     # runs terminate/3 and waits for it
+```
+
+`start_store/2` returns `{:error, reason}` when the store's `init/2` does, so
+refusing to start is testable too. The calling process is registered as the
+session, and the store is stopped for you when the test ends.
+
+
 ## Connectors
 The default export of `useStorex` uses WebSocket connections only, you can extend it by using custom connector.
 
